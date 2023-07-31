@@ -26,7 +26,6 @@ import (
 	"github.com/bank-vaults/vault-sdk/vault"
 	vaultapi "github.com/hashicorp/vault/api"
 	"github.com/sirupsen/logrus"
-	"github.com/slok/kubewebhook/v2/pkg/model"
 	"github.com/spf13/viper"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -100,12 +99,10 @@ type VaultConfig struct {
 	Token                         string
 }
 
-func parseVaultConfig(obj metav1.Object, ar *model.AdmissionReview) VaultConfig {
+func ParseVaultConfig(annotations map[string]string, namespace string, serviceAccountName string) VaultConfig {
 	vaultConfig := VaultConfig{
-		ObjectNamespace: ar.Namespace,
+		ObjectNamespace: namespace,
 	}
-
-	annotations := obj.GetAnnotations()
 
 	if val := annotations["vault.security.banzaicloud.io/mutate"]; val == "skip" {
 		vaultConfig.Skip = true
