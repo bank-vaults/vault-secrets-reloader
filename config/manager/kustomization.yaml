@@ -1,0 +1,9 @@
+resources:
+- manager.yaml
+- hash_secret.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: controller
+  newName: vault-secrets-reloader
+  newTag: latest
