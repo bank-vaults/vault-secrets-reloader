@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: reloader-test-statefulset
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: reloader-test-statefulset
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: reloader-test-statefulset
+      annotations:
+        vault.security.banzaicloud.io/vault-addr: "https://vault:8200"
+        vault.security.banzaicloud.io/vault-tls-secret: vault-tls
+        alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
+    spec:
+      initContainers:
+        - name: init-ubuntu
+          image: ubuntu
+          command: ["sh", "-c", "echo $MYSQL_PASSWORD && echo $DOCKER_REPO_PASSWORD && echo initContainers ready"]
+          env:
+            - name: MYSQL_PASSWORD
+              value: vault:secret/data/mysql#${.MYSQL_PASSWORD}#1
+            - name: DOCKER_REPO_PASSWORD
+              value: vault:secret/data/dockerrepo#${.DOCKER_REPO_PASSWORD}
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+      containers:
+        - name: alpine
+          image: alpine
+          command:
+            - "sh"
+            - "-c"
+            - "echo $MYSQL_PASSWORD && echo $DOCKER_REPO_PASSWORD && echo going to sleep... && sleep 10000"
+          env:
+            - name: MYSQL_PASSWORD
+              value: vault:secret/data/mysql#MYSQL_PASSWORD#1
+            - name: DOCKER_REPO_PASSWORD
+              value: vault:secret/data/dockerrepo#DOCKER_REPO_PASSWORD
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "100m"

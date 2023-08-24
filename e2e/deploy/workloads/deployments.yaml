@@ -1,0 +1,121 @@
+# deployment to be reloaded
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reloader-test-deployment-to-be-reloaded
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: reloader-test-deployment-to-be-reloaded
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: reloader-test-deployment-to-be-reloaded
+      annotations:
+        vault.security.banzaicloud.io/vault-addr: "https://vault:8200"
+        vault.security.banzaicloud.io/vault-tls-secret: vault-tls
+        alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
+    spec:
+      initContainers:
+        - name: init-ubuntu
+          image: ubuntu
+          command: ["sh", "-c", "echo $AWS_SECRET_ACCESS_KEY && echo $MYSQL_PASSWORD && echo initContainers ready"]
+          env:
+            - name: AWS_SECRET_ACCESS_KEY
+              value: vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY
+            - name: MYSQL_PASSWORD
+              value: vault:secret/data/mysql#${.MYSQL_PASSWORD}
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+      containers:
+        - name: alpine
+          image: alpine
+          command:
+            - "sh"
+            - "-c"
+            - "echo $AWS_SECRET_ACCESS_KEY && echo $MYSQL_PASSWORD && echo going to sleep... && sleep 10000"
+          env:
+            - name: AWS_SECRET_ACCESS_KEY
+              value: vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY
+            - name: MYSQL_PASSWORD
+              value: vault:secret/data/mysql#${.MYSQL_PASSWORD}
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reloader-test-deployment-no-reload
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: reloader-test-deployment-no-reload
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: reloader-test-deployment-no-reload
+      annotations:
+        vault.security.banzaicloud.io/vault-addr: "https://vault:8200"
+        vault.security.banzaicloud.io/vault-tls-secret: vault-tls
+    spec:
+      containers:
+        - name: alpine
+          image: alpine
+          command:
+            - "sh"
+            - "-c"
+            - "echo $AWS_SECRET_ACCESS_KEY && echo $MYSQL_PASSWORD && echo going to sleep... && sleep 10000"
+          env:
+            - name: AWS_SECRET_ACCESS_KEY
+              value: vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY
+            - name: MYSQL_PASSWORD
+              value: vault:secret/data/mysql#${.MYSQL_PASSWORD}
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reloader-test-deployment-fixed-versions-no-reload
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: reloader-test-deployment-fixed-versions-no-reload
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: reloader-test-deployment-fixed-versions-no-reload
+      annotations:
+        vault.security.banzaicloud.io/vault-addr: "https://vault:8200"
+        vault.security.banzaicloud.io/vault-tls-secret: vault-tls
+        alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
+    spec:
+      containers:
+        - name: alpine
+          image: alpine
+          command:
+            - "sh"
+            - "-c"
+            - "echo $AWS_SECRET_ACCESS_KEY && echo $MYSQL_PASSWORD && echo going to sleep... && sleep 10000"
+          env:
+            - name: AWS_SECRET_ACCESS_KEY
+              value: vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY#1
+            - name: MYSQL_PASSWORD
+              value: vault:secret/data/mysql#${.MYSQL_PASSWORD}#1
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
