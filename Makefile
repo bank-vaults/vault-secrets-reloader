@@ -20,7 +20,7 @@ SHELL = /usr/bin/env bash -o pipefail
 .PHONY: help
 default: help
 help: ## Display this help
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "	\033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Checks
 
@@ -48,6 +48,21 @@ lint-docker: # Run Dockerfile lint check
 .PHONY: lint
 lint: lint-go lint-helm lint-docker ## Run lint checks
 
+.PHONY: test
+test: ## Run tests
+		go clean -testcache
+		go test -race -v ./pkg/reloader
+
+.PHONY: test-e2e
+test-e2e: ## Run acceptance tests. If running on a local kind cluster, run "make import-test" before this
+		go clean -testcache
+		go test -race -v -timeout 900s -tags e2e ./e2e
+
+.PHONY: test-e2e-local
+test-e2e-local: ## Run e2e tests locally
+		go clean -testcache
+		LOAD_IMAGE=${IMG} RELOADER_VERSION=dev LOG_VERBOSE=true ${MAKE} test-e2e
+
 ##@ Development
 
 .PHONY: run
@@ -59,21 +74,20 @@ up: ## Start kind development environment
 	$(KIND) create cluster --name $(TEST_KIND_CLUSTER)
 	sleep 10
 	helm upgrade --install vault-operator oci://ghcr.io/bank-vaults/helm-charts/vault-operator \
-    --set image.tag=latest \
-    --set image.bankVaultsTag=latest \
-    --wait
-	# kubectl kustomize https://github.com/bank-vaults/vault-operator/deploy/rbac | kubectl apply -f -
+		--set image.tag=latest \
+		--set image.bankVaultsTag=latest \
+		--wait
 	kubectl create namespace bank-vaults-infra --dry-run=client -o yaml | kubectl apply -f -
 	kubectl apply -f $(shell pwd)/e2e/deploy/vault/
 	sleep 60
 	helm upgrade --install vault-secrets-webhook oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook \
-    --set replicaCount=1 \
-    --set image.tag=latest \
-    --set image.pullPolicy=IfNotPresent \
-    --set podsFailurePolicy=Fail \
-    --set secretsFailurePolicy=Fail \
-    --set vaultEnv.tag=latest \
-    --namespace bank-vaults-infra
+		--set replicaCount=1 \
+		--set image.tag=latest \
+		--set image.pullPolicy=IfNotPresent \
+		--set podsFailurePolicy=Fail \
+		--set vaultEnv.tag=latest \
+		--namespace bank-vaults-infra
+	kind load docker-image ghcr.io/bank-vaults/vault-secrets-reloader:dev --name $(TEST_KIND_CLUSTER)
 
 .PHONY: down
 down: ## Destroy kind development environment
@@ -113,11 +127,11 @@ generate: gen-helm-docs ## Generate manifests, code, and docs resources
 deploy: ## Deploy manager resources to the K8s cluster
 	kubectl create namespace bank-vaults-infra --dry-run=client -o yaml | kubectl apply -f -
 	$(HELM) upgrade --install vault-secrets-reloader deploy/charts/vault-secrets-reloader \
-    --set logLevel=debug \
-    --set image.tag=dev \
+		--set logLevel=debug \
+		--set image.tag=dev \
 		--set collectorSyncPeriod=30s \
 		--set reloaderRunPeriod=1m \
-    --namespace bank-vaults-infra
+		--namespace bank-vaults-infra
 
 .PHONY: undeploy
 undeploy: ## Clean manager resources from the K8s cluster.

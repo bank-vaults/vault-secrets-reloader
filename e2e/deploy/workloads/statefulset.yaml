@@ -3,7 +3,7 @@ kind: StatefulSet
 metadata:
   name: reloader-test-statefulset
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: reloader-test-statefulset
