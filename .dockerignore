@@ -1,0 +1,8 @@
+/.devenv/
+/.direnv/
+/.github/
+/bin/
+/build/
+/deploy/
+/Dockerfile
+/e2e/

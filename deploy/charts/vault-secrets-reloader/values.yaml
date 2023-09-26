@@ -1,0 +1,115 @@
+# Default values for vault-secrets-reloader.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+logLevel: info
+
+image:
+  repository: ghcr.io/bank-vaults/vault-secrets-reloader
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+collectorSyncPeriod: 2h
+reloaderRunPeriod: 8h
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  name: vault-secrets-reloader
+  type: ClusterIP
+  externalPort: 443
+  internalPort: 8443
+  annotations: {}
+  # Annotate service
+  # This can be used for example if type is AWS LoadBalancer and you want to add security groups
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+env:
+  # define env vars for Vault used for authentication
+  VAULT_ROLE: "reloader"
+  VAULT_ADDR: "https://vault.default.svc.cluster.local:8200"
+  # VAULT_NAMESPACE: "default"
+  VAULT_TLS_SECRET: "vault-tls"
+  VAULT_TLS_SECRET_NS: "bank-vaults-infra"
+  # VAULT_SKIP_VERIFY: "false"
+  # VAULT_ROLE: "default"
+  # VAULT_AUTH_METHOD: "kubernetes"
+  # VAULT_PATH: "kubernetes"
+  # VAULT_CLIENT_TIMEOUT: "10s"
+  # VAULT_IGNORE_MISSING_SECRETS: "false"
+
+volumes: []
+# - name: vault-tls
+#   secret:
+#     secretName: vault-tls
+
+volumeMounts: []
+# - name: vault-tls
+#   mountPath: /vault/tls
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
