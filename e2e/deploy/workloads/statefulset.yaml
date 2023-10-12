@@ -22,7 +22,7 @@ spec:
           command: ["sh", "-c", "echo $MYSQL_PASSWORD && echo $DOCKER_REPO_PASSWORD && echo initContainers ready"]
           env:
             - name: MYSQL_PASSWORD
-              value: vault:secret/data/mysql#${.MYSQL_PASSWORD}#1
+              value: vault:secret/data/mysql#${.MYSQL_PASSWORD}
             - name: DOCKER_REPO_PASSWORD
               value: vault:secret/data/dockerrepo#${.DOCKER_REPO_PASSWORD}
           resources:
@@ -38,7 +38,7 @@ spec:
             - "echo $MYSQL_PASSWORD && echo $DOCKER_REPO_PASSWORD && echo going to sleep... && sleep 10000"
           env:
             - name: MYSQL_PASSWORD
-              value: vault:secret/data/mysql#MYSQL_PASSWORD#1
+              value: vault:secret/data/mysql#MYSQL_PASSWORD
             - name: DOCKER_REPO_PASSWORD
               value: vault:secret/data/dockerrepo#DOCKER_REPO_PASSWORD
           resources:
