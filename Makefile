@@ -101,7 +101,7 @@ artifacts: build container-image helm-chart ## Build artifacts
 .PHONY: build
 build: ## Build manager binary
 	@mkdir -p build
-	go build -race -o build/controller .
+	go build -race -o build/vault-secrets-reloader .
 
 .PHONY: container-image
 container-image: ## Build docker image
@@ -127,7 +127,6 @@ generate: gen-helm-docs ## Generate manifests, code, and docs resources
 deploy: ## Deploy manager resources to the K8s cluster
 	kubectl create namespace bank-vaults-infra --dry-run=client -o yaml | kubectl apply -f -
 	$(HELM) upgrade --install vault-secrets-reloader deploy/charts/vault-secrets-reloader \
-		--set logLevel=debug \
 		--set image.tag=dev \
 		--set collectorSyncPeriod=30s \
 		--set reloaderRunPeriod=1m \

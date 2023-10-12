@@ -1,5 +1,5 @@
 {
-  description = "A Kubernetes controller that reloads workloads in case a secret it uses has been changed in Vault";
+  description = "A Kubernetes Controller that reloads workloads in case a secret they use has been changed in Vault";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
