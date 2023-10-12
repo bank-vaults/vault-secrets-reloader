@@ -20,7 +20,7 @@ SHELL = /usr/bin/env bash -o pipefail
 .PHONY: help
 default: help
 help: ## Display this help
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "	\033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Checks
 
@@ -37,9 +37,31 @@ fmt: ## Run go fmt against code
 lint-go: # Run golang lint check
 	$(GOLANGCI_LINT) run $(if ${CI},--out-format github-actions,)
 
+.PHONY: lint-helm
+lint-helm: # Run helm lint check
+	$(HELM) lint deploy/charts/vault-secrets-reloader
+
+.PHONY: lint-docker
+lint-docker: # Run Dockerfile lint check
+	$(HADOLINT) --failure-threshold error Dockerfile
+
 .PHONY: lint
-# lint-helm lint-docker lint-yaml
-lint: lint-go ## Run lint checks
+lint: lint-go lint-helm lint-docker ## Run lint checks
+
+.PHONY: test
+test: ## Run tests
+		go clean -testcache
+		go test -race -v ./pkg/reloader
+
+.PHONY: test-e2e
+test-e2e: ## Run acceptance tests. If running on a local kind cluster, run "make import-test" before this
+		go clean -testcache
+		go test -race -v -timeout 900s -tags e2e ./e2e
+
+.PHONY: test-e2e-local
+test-e2e-local: ## Run e2e tests locally
+		go clean -testcache
+		LOAD_IMAGE=${IMG} RELOADER_VERSION=dev LOG_VERBOSE=true ${MAKE} test-e2e
 
 ##@ Development
 
@@ -52,21 +74,20 @@ up: ## Start kind development environment
 	$(KIND) create cluster --name $(TEST_KIND_CLUSTER)
 	sleep 10
 	helm upgrade --install vault-operator oci://ghcr.io/bank-vaults/helm-charts/vault-operator \
-    --set image.tag=latest \
-    --set image.bankVaultsTag=latest \
-    --wait
-	# kubectl kustomize https://github.com/bank-vaults/vault-operator/deploy/rbac | kubectl apply -f -
+		--set image.tag=latest \
+		--set image.bankVaultsTag=latest \
+		--wait
 	kubectl create namespace bank-vaults-infra --dry-run=client -o yaml | kubectl apply -f -
 	kubectl apply -f $(shell pwd)/e2e/deploy/vault/
 	sleep 60
 	helm upgrade --install vault-secrets-webhook oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook \
-    --set replicaCount=1 \
-    --set image.tag=latest \
-    --set image.pullPolicy=IfNotPresent \
-    --set podsFailurePolicy=Fail \
-    --set secretsFailurePolicy=Fail \
-    --set vaultEnv.tag=latest \
-    --namespace bank-vaults-infra
+		--set replicaCount=1 \
+		--set image.tag=latest \
+		--set image.pullPolicy=IfNotPresent \
+		--set podsFailurePolicy=Fail \
+		--set vaultEnv.tag=latest \
+		--namespace bank-vaults-infra
+	kind load docker-image ghcr.io/bank-vaults/vault-secrets-reloader:dev --name $(TEST_KIND_CLUSTER)
 
 .PHONY: down
 down: ## Destroy kind development environment
@@ -74,12 +95,47 @@ down: ## Destroy kind development environment
 
 ##@ Build
 
+.PHONY: artifacts
+artifacts: build container-image helm-chart ## Build artifacts
+
 .PHONY: build
 build: ## Build manager binary
 	@mkdir -p build
 	go build -race -o build/controller .
 
+.PHONY: container-image
+container-image: ## Build docker image
+	docker build -t ${IMG} .
+
+.PHONY: helm-chart
+helm-chart: ## Build Helm chart
+	@mkdir -p build
+	helm package -d build/ deploy/charts/vault-secrets-reloader
+
+##@ Autogeneration
+
+.PHONY: gen-helm-docs
+gen-helm-docs: ## Generate Helm chart documentation
+	$(HELM_DOCS) -s file -c deploy/charts/ -t README.md.gotmpl
+
+.PHONY: generate
+generate: gen-helm-docs ## Generate manifests, code, and docs resources
+
 ##@ Deployment
+
+.PHONY: deploy
+deploy: ## Deploy manager resources to the K8s cluster
+	kubectl create namespace bank-vaults-infra --dry-run=client -o yaml | kubectl apply -f -
+	$(HELM) upgrade --install vault-secrets-reloader deploy/charts/vault-secrets-reloader \
+		--set logLevel=debug \
+		--set image.tag=dev \
+		--set collectorSyncPeriod=30s \
+		--set reloaderRunPeriod=1m \
+		--namespace bank-vaults-infra
+
+.PHONY: undeploy
+undeploy: ## Clean manager resources from the K8s cluster.
+	$(HELM) uninstall vault-secrets-reloader --namespace bank-vaults-infra
 
 ##@ Dependencies
 
@@ -87,32 +143,16 @@ build: ## Build manager binary
 GOLANGCI_VERSION = 1.53.3
 LICENSEI_VERSION = 0.8.0
 KIND_VERSION = 0.20.0
-# CODE_GENERATOR_VERSION = 0.27.1
-# HELM_DOCS_VERSION = 1.11.0
-# KUSTOMIZE_VERSION = 5.1.0
-# CONTROLLER_TOOLS_VERSION = 0.12.1
+HELM_DOCS_VERSION = 1.11.0
 
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
-# KUSTOMIZE ?= $(or $(shell which kustomize),$(LOCALBIN)/kustomize)
-# $(KUSTOMIZE): $(LOCALBIN)
-# 	@if test -x $(LOCALBIN)/kustomize && ! $(LOCALBIN)/kustomize version | grep -q v$(KUSTOMIZE_VERSION); then \
-# 		echo "$(LOCALBIN)/kustomize version is not expected $(KUSTOMIZE_VERSION). Removing it before installing."; \
-# 		rm -rf $(LOCALBIN)/kustomize; \
-# 	fi
-# 	test -s $(LOCALBIN)/kustomize || GOBIN=$(LOCALBIN) GO111MODULE=on go install sigs.k8s.io/kustomize/kustomize/v5@v$(KUSTOMIZE_VERSION)
-#
-# CONTROLLER_GEN ?= $(or $(shell which controller-gen),$(LOCALBIN)/controller-gen)
-# $(CONTROLLER_GEN): $(LOCALBIN)
-# 	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q v$(CONTROLLER_TOOLS_VERSION) || \
-# 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@v$(CONTROLLER_TOOLS_VERSION)
-#
-# ENVTEST ?= $(or $(shell which setup-envtest),$(LOCALBIN)/setup-envtest)
-# $(ENVTEST): $(LOCALBIN)
-# 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+ENVTEST ?= $(or $(shell which setup-envtest),$(LOCALBIN)/setup-envtest)
+$(ENVTEST): $(LOCALBIN)
+	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 GOLANGCI_LINT ?= $(or $(shell which golangci-lint),$(LOCALBIN)/golangci-lint)
 $(GOLANGCI_LINT): $(LOCALBIN)
@@ -129,22 +169,20 @@ $(KIND): $(LOCALBIN)
 		chmod +x $(LOCALBIN)/kind; \
 	fi
 
-# HELM ?= $(or $(shell which helm),$(LOCALBIN)/helm)
-# $(HELM): $(LOCALBIN)
-# 	test -s $(LOCALBIN)/helm || curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | USE_SUDO=false HELM_INSTALL_DIR=$(LOCALBIN) bash
-#
-# HELM_DOCS ?= $(or $(shell which helm-docs),$(LOCALBIN)/helm-docs)
-# $(HELM_DOCS): $(LOCALBIN)
-# 	@if [ ! -s "$(LOCALBIN)/helm-docs" ]; then \
-# 		curl -L https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_$(shell uname)_x86_64.tar.gz | tar -zOxf - helm-docs > ./bin/helm-docs; \
-# 		chmod +x $(LOCALBIN)/helm-docs; \
-# 	fi
+HELM ?= $(or $(shell which helm),$(LOCALBIN)/helm)
+$(HELM): $(LOCALBIN)
+	test -s $(LOCALBIN)/helm || curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | USE_SUDO=false HELM_INSTALL_DIR=$(LOCALBIN) bash
+
+HELM_DOCS ?= $(or $(shell which helm-docs),$(LOCALBIN)/helm-docs)
+$(HELM_DOCS): $(LOCALBIN)
+	@if [ ! -s "$(LOCALBIN)/helm-docs" ]; then \
+		curl -L https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_$(shell uname)_x86_64.tar.gz | tar -zOxf - helm-docs > ./bin/helm-docs; \
+		chmod +x $(LOCALBIN)/helm-docs; \
+	fi
 
 # TODO: add support for hadolint and yamllint dependencies
 HADOLINT ?= hadolint
 YAMLLINT ?= yamllint
 
 .PHONY: deps
-deps: $(HELM) $(CONTROLLER_GEN) $(KUSTOMIZE) $(KIND)
-deps: $(HELM_DOCS) $(ENVTEST) $(GOLANGCI_LINT) $(LICENSEI)
-deps: ## Download and install dependencies
+deps: $(HELM) $(HELM_DOCS) $(ENVTEST) $(GOLANGCI_LINT) $(LICENSEI) $(KIND) ## Download and install dependencies
