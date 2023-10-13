@@ -1,19 +1,18 @@
 # Vault Secrets Reloader
 
 Vault Secrets Reloader can periodically check if a secret that is used in watched workloads has a new version in
-Hashicorp Vault, and if so, automatically “reloads” them by incrementing an annotation value, initiating a rollout for
-the workload’s pods. This controller is essentially a complementary to `vault-secrets-webhook`, relying on it for
+Hashicorp Vault, and if so, automatically “reloads” them by incrementing an annotation value, then initiating a rollout for
+the workload’s pods. This controller complements `vault-secrets-webhook`, relying on it for
 actually injecting secrets into the pods of the affected workloads.
 
-If you already use the [webhook](https://github.com/bank-vaults/vault-secrets-webhook), you are probably aware of it
-only injecting secrets when the pods are created/recreated, and until now, there were no solution within the Bank-Vaults
+If you already use [`vault-secrets-webhook`](https://github.com/bank-vaults/vault-secrets-webhook), you probably know that it
+only injects secrets when the pods are created/recreated. Until now, there was no solution within the Bank-Vaults
 ecosystem to inject secrets into these workloads in a continuous manner. Vault Secrets Reloader offers Vault Secrets
 Webhook users an automated solution for this problem.
 
-> [!IMPORTANT] This is an **early alpha version** and breaking changes are expected. As such, it is not recommended
-> for usage in production.
+> **IMPORTANT!** This is an **early alpha version** and breaking changes are expected. As such, do not use it in production.
 >
-> You can support us with your feedback, bug reports, and feature requests.
+> You can support us with your [feedback, bug reports, and feature requests](https://github.com/bank-vaults/vault-secrets-reloader/issues).
 
 ## Features
 
@@ -23,14 +22,14 @@ Upon deployment, the Reloader spawns two “workers”, that run periodically at
    `alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation in their pod template metadata and
    the Vault secrets they use.
 1. The `reloader` iterates on the data collected by the `collector`, polling the configured Vault instance for the
-   current version of the secrets, and if it finds that it differs from the stored one, adds the workloads where the
+   current version of the secrets. If the version of a secret differs from the stored one, the `reloader` adds the workloads where the
    secret is used to a list of workloads that needs reloading. In a following step, it modifies these workloads by
    incrementing the value of the `alpha.vault.security.banzaicloud.io/secret-reload-count` annotation in their pod
    template metadata, initiating a new rollout.
 
 - The time interval can be set separately for these two workers, to limit resources they use and the number of requests
   sent to the Vault instance. The interval setting for the `collector` (`collectorSyncPeriod` in the Helm chart) should
-  logically be the same, or lower than for the `reloader` (`reloaderRunPeriod`).
+   be the same, or lower than for the `reloader` (`reloaderRunPeriod`).
 - Vault credentials can be set through environment variables in the Helm chart.
 
 ## Current limitations
@@ -76,7 +75,7 @@ make container-image
 make deploy
 ```
 
-The last command will install the Reloader Helm chart with the following settings:
+The last command will install the `vault-secrets-reloader` Helm chart with the following settings:
 
 ```shell
 helm upgrade --install vault-secrets-reloader deploy/charts/vault-secrets-reloader \
@@ -86,7 +85,7 @@ helm upgrade --install vault-secrets-reloader deploy/charts/vault-secrets-reload
     --namespace bank-vaults-infra
 ```
 
-Now that we have the Bank-Vaults ecosystem running in our kind cluster, we can try out the Reloader in action:
+Now that you have the Bank-Vaults ecosystem running in your kind cluster, try out the Reloader in action:
 
 ```shell
 # deploy some workloads
@@ -120,12 +119,10 @@ updated secret.
     vault kv patch secret/mysql MYSQL_PASSWORD=totallydifferentsecret
     ```
 
-    Also notice that there are two pods with the now changed `MYSQL_PASSWORD` injected into them not
-being restarted, for the following reasons:
+    Also notice that there are two pods with the now changed `MYSQL_PASSWORD` injected into them, but they are not restarted, because:
 
-    - the pod `reloader-test-deployment-no-reload-...` does not have the
-`alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation set
-    - the pod `reloader-test-deployment-fixed-versions-no-reload-...` - although it does have the annotation - only uses
+    - the pod `reloader-test-deployment-no-reload-...` does not have the `alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation set
+    - the pod `reloader-test-deployment-fixed-versions-no-reload-...` does have the annotation, but only uses
   versioned secrets, so they won't be reloaded for the latest version of the secret.
 
 2. Change two secrets used in a workload, observe the previous pod to be recreated again, also that the pod
@@ -147,17 +144,17 @@ being restarted, for the following reasons:
     kubectl logs -n bank-vaults-infra -l app.kubernetes.io/name=vault-secrets-reloader --follow
     ```
 
-You can tear down the test cluster with `make down` once you finished.
+You can tear down the test cluster with `make down` once you are finished.
 
 ## Development
 
-**For an optimal developer experience, it is recommended to install [Nix](https://nixos.org/download.html) and
+### Prerequisites
+
+- Make sure Docker is installed with Compose and Buildx.
+- **For an optimal developer experience, it is recommended to install [Nix](https://nixos.org/download.html) and
 [direnv](https://direnv.net/docs/installation.html).**
 
-_Alternatively, install [Go](https://go.dev/dl/) on your computer then run `make deps` to install the rest of the
-dependencies._
-
-Make sure Docker is installed with Compose and Buildx.
+    _Alternatively, install [Go](https://go.dev/dl/) on your computer then run `make deps` to install the rest of the dependencies._
 
 ### Install project dependencies locally
 
@@ -236,3 +233,7 @@ make down
 ## License
 
 The project is licensed under the [Apache 2.0 License](LICENSE).
+
+## Code of conduct
+
+For our code of conduct, contribution guide, and other similar policies, see https://github.com/bank-vaults/bank-vaults
