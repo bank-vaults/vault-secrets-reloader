@@ -1,7 +1,7 @@
 # Vault Secrets Reloader
 
 Vault Secrets Reloader can periodically check if a secret that is used in watched workloads has a new version in
-Hashicorp Vault, and if so, automatically “reloads” them by incrementing an annotation value, then initiating a rollout for
+Hashicorp Vault, and if so, automatically “reloads” them by incrementing an annotation value, initiating a rollout for
 the workload’s pods. This controller complements `vault-secrets-webhook`, relying on it for
 actually injecting secrets into the pods of the affected workloads.
 
@@ -10,7 +10,7 @@ only injects secrets when the pods are created/recreated. Until now, there was n
 ecosystem to inject secrets into these workloads in a continuous manner. Vault Secrets Reloader offers Vault Secrets
 Webhook users an automated solution for this problem.
 
-> **IMPORTANT!** This is an **early alpha version** and breaking changes are expected. As such, do not use it in production.
+> [!IMPORTANT] This is an **early alpha version** and breaking changes are expected. As such, do not use it in production.
 >
 > You can support us with your [feedback, bug reports, and feature requests](https://github.com/bank-vaults/vault-secrets-reloader/issues).
 
