@@ -13,7 +13,7 @@ require (
 	k8s.io/apimachinery v0.28.2
 	k8s.io/client-go v0.28.2
 	k8s.io/klog/v2 v2.100.1
-	k8s.io/sample-controller v0.27.4
+	k8s.io/sample-controller v0.28.2
 	logur.dev/adapter/logrus v0.5.0
 	sigs.k8s.io/controller-runtime v0.16.0
 	sigs.k8s.io/e2e-framework v0.3.0
