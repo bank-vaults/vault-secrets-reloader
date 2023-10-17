@@ -5,7 +5,7 @@ go 1.21.1
 require (
 	github.com/bank-vaults/vault-operator v1.21.2
 	github.com/bank-vaults/vault-sdk v0.9.0
-	github.com/hashicorp/vault/api v1.9.2
+	github.com/hashicorp/vault/api v1.10.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
 	k8s.io/api v0.28.2
