@@ -87,7 +87,6 @@ up: ## Start kind development environment
 		--set podsFailurePolicy=Fail \
 		--set vaultEnv.tag=latest \
 		--namespace bank-vaults-infra
-	kind load docker-image ghcr.io/bank-vaults/vault-secrets-reloader:dev --name $(TEST_KIND_CLUSTER)
 
 .PHONY: down
 down: ## Destroy kind development environment
@@ -124,7 +123,17 @@ generate: gen-helm-docs ## Generate manifests, code, and docs resources
 ##@ Deployment
 
 .PHONY: deploy
-deploy: ## Deploy manager resources to the K8s cluster
+deploy: ## Deploy Reloader controller resources to the K8s cluster
+	kubectl create namespace bank-vaults-infra --dry-run=client -o yaml | kubectl apply -f -
+	$(HELM) upgrade --install vault-secrets-reloader deploy/charts/vault-secrets-reloader \
+		--set image.tag=dev \
+		--set collectorSyncPeriod=30s \
+		--set reloaderRunPeriod=1m \
+		--namespace bank-vaults-infra
+
+.PHONY: deploy-kind
+deploy-kind: ## Deploy Reloder controller resources to the kind cluster
+	kind load docker-image $(IMG) --name $(TEST_KIND_CLUSTER)
 	kubectl create namespace bank-vaults-infra --dry-run=client -o yaml | kubectl apply -f -
 	$(HELM) upgrade --install vault-secrets-reloader deploy/charts/vault-secrets-reloader \
 		--set image.tag=dev \

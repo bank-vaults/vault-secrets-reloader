@@ -2,37 +2,50 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# -- Number of replicas
 replicaCount: 1
 
+# -- Log level
 logLevel: info
 
 image:
+  # -- Container image repo that contains the Reloader Controller
   repository: ghcr.io/bank-vaults/vault-secrets-reloader
-  pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
+  # -- Container image tag
   tag: ""
+  # -- Container image pull policy
+  pullPolicy: IfNotPresent
 
+# -- Container image pull secrets for private repositories
 imagePullSecrets: []
+# -- Override app name
 nameOverride: ""
+# -- Override app full name
 fullnameOverride: ""
 
-collectorSyncPeriod: 2h
-reloaderRunPeriod: 8h
+# -- Time interval for the collector worker to run in Go Duration format
+collectorSyncPeriod: 30m
+# -- Time interval for the reloader worker to run in Go Duration format
+reloaderRunPeriod: 1h
 
 serviceAccount:
-  # Specifies whether a service account should be created
+  # -- Specifies whether a service account should be created
   create: true
-  # Annotations to add to the service account
+  # -- Annotations to add to the service account
   annotations: {}
-  # The name of the service account to use.
+  # -- The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+# -- Extra annotations to add to pod metadata
 podAnnotations: {}
 
+# -- Pod security context for Reloader deployment
 podSecurityContext: {}
   # fsGroup: 2000
 
+# -- Pod security context for Reloader containers
 securityContext: {}
   # capabilities:
   #   drop:
@@ -42,59 +55,65 @@ securityContext: {}
   # runAsUser: 1000
 
 service:
+  # -- Reloader service name
   name: vault-secrets-reloader
+  # -- Reloader service type
   type: ClusterIP
+  # -- Reloader service external port
   externalPort: 443
+  # -- Reloader service internal port
   internalPort: 8443
+  # -- Reloader service annotations, e.g. if type is AWS LoadBalancer and you want to add security groups
   annotations: {}
-  # Annotate service
-  # This can be used for example if type is AWS LoadBalancer and you want to add security groups
 
 ingress:
+  # -- Enable Reloader ingress
   enabled: false
+  # -- Reloader IngressClass name
   className: ""
+  # -- Reloader ingress annotations
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
+  # -- Reloader ingress hosts
   hosts:
     - host: chart-example.local
       paths:
         - path: /
           pathType: ImplementationSpecific
+  # -- Reloader ingress tls
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
 
+# -- Custom environment variables available to Reloader
+# Define environment variables for Vault authentication here
 env:
-  # define env vars for Vault used for authentication
   VAULT_ROLE: "reloader"
   VAULT_ADDR: "https://vault.default.svc.cluster.local:8200"
   # VAULT_NAMESPACE: "default"
   VAULT_TLS_SECRET: "vault-tls"
   VAULT_TLS_SECRET_NS: "bank-vaults-infra"
   # VAULT_SKIP_VERIFY: "false"
-  # VAULT_ROLE: "default"
   # VAULT_AUTH_METHOD: "kubernetes"
   # VAULT_PATH: "kubernetes"
   # VAULT_CLIENT_TIMEOUT: "10s"
   # VAULT_IGNORE_MISSING_SECRETS: "false"
 
+# -- Extra volume definitions for Reloader deployment
 volumes: []
 # - name: vault-tls
 #   secret:
 #     secretName: vault-tls
 
+# -- Extra volume mounts for Reloader deployment
 volumeMounts: []
 # - name: vault-tls
 #   mountPath: /vault/tls
 
+# -- Resources to request for the deployment and pods
 resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
   #   cpu: 100m
   #   memory: 128Mi
   # requests:
@@ -102,14 +121,23 @@ resources: {}
   #   memory: 128Mi
 
 autoscaling:
+  # -- Enable Reloader horizontal pod autoscaling
   enabled: false
+  # -- Minimum number of replicas
   minReplicas: 1
+  # -- Maximum number of replicas
   maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
+  # targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
+# -- Node labels for pod assignment.
+# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
 nodeSelector: {}
 
+# -- List of node tolerations for the pods.
+# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 tolerations: []
 
+# -- Node affinity settings for the pods.
+# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
 affinity: {}

@@ -57,6 +57,31 @@ are supported yet.
 - Data collected by the `reloader` is only stored in-memory (secret version updates during the controller is being
   recreated will not be acted upon, as it will rebuild its data store from scratch on start).
 
+## Configuration
+
+Reloader needs to access the Vault instance on its own, so make sure you set the correct environment variables through
+the Helm chart (you can check the list of environmental variables accepted for creating a Vault client
+[here](https://developer.hashicorp.com/vault/docs/commands#environment-variables)). Furthermore, configure the workload
+data collection and reloading periods (using Go Duration format) that work best for your requirements and use-cases. For
+example:
+
+```shell
+helm upgrade --install vault-secrets-reloader oci://ghcr.io/bank-vaults/vault-secrets-reloader \
+    --set collectorSyncPeriod=2h \
+    --set reloaderRunPeriod=4h \
+    --set env.VAULT_ADDR=[URL for Vault]
+    --set env.VAULT_PATH=[Auth path]
+    --set env.VAULT_ROLE=[Auth role]
+    --set env.VAULT_AUTH_METHOD=[Auth method]
+    # other environmental variables needed for the auth method of your choice
+    --namespace bank-vaults-infra --create-namespace
+```
+
+Vault also needs to be configured with an auth method for the Reloader to use. Additionally, it is advised to create a
+role and policy that allows the Reloader to `read` and `list` secrets from Vault. An example can be found in the
+[example Bank-Vaults Operator CR
+file](https://github.com/bank-vaults/vault-secrets-reloader/blob/main/e2e/deploy/vault/vault.yaml#L102).
+
 ## Trying out Vault Secrets Reloader locally
 
 Make sure Docker is installed with Compose and Buildx.
@@ -74,10 +99,10 @@ make up
 make container-image
 
 # deploy Vault Secrets Reloader
-make deploy
+make deploy-kind
 ```
 
-The last command will install the Reloader Helm chart with the following settings:
+The last command will install the Reloader Helm chart with the following configuration:
 
 ```shell
 helm upgrade --install vault-secrets-reloader deploy/charts/vault-secrets-reloader \
