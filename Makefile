@@ -43,7 +43,7 @@ lint-helm: # Run helm lint check
 
 .PHONY: lint-docker
 lint-docker: # Run Dockerfile lint check
-	$(HADOLINT) --failure-threshold error Dockerfile
+	$(HADOLINT) Dockerfile
 
 .PHONY: lint
 lint: lint-go lint-helm lint-docker ## Run lint checks

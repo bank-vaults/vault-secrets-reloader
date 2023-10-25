@@ -32,6 +32,13 @@
               nixpkgs-fmt.enable = true;
               yamllint.enable = true;
               hadolint.enable = true;
+              helm-docs = {
+                enable = true;
+                name = "helm-docs";
+                description = "Uses 'helm-docs' to create documentation from the Helm chart's 'values.yaml' file, and inserts the result into a corresponding 'README.md' file.";
+                files = "";
+                entry = "${pkgs.helm-docs}/bin/helm-docs";
+              };
             };
 
             packages = with pkgs; [
