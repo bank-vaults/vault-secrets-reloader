@@ -73,14 +73,14 @@ run: ## Run manager from your host
 up: ## Start kind development environment
 	$(KIND) create cluster --name $(TEST_KIND_CLUSTER)
 	sleep 10
-	helm upgrade --install vault-operator oci://ghcr.io/bank-vaults/helm-charts/vault-operator \
+	$(HELM) upgrade --install vault-operator oci://ghcr.io/bank-vaults/helm-charts/vault-operator \
 		--set image.tag=latest \
 		--set image.bankVaultsTag=latest \
 		--wait
-	kubectl create namespace bank-vaults-infra --dry-run=client -o yaml | kubectl apply -f -
-	kubectl apply -f $(shell pwd)/e2e/deploy/vault/
+	$(KUBECTL) create namespace bank-vaults-infra --dry-run=client -o yaml | $(KUBECTL) apply -f -
+	$(KUBECTL) apply -f $(shell pwd)/e2e/deploy/vault/
 	sleep 60
-	helm upgrade --install vault-secrets-webhook oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook \
+	$(HELM) upgrade --install vault-secrets-webhook oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook \
 		--set replicaCount=1 \
 		--set image.tag=latest \
 		--set image.pullPolicy=IfNotPresent \
@@ -124,22 +124,19 @@ generate: gen-helm-docs ## Generate manifests, code, and docs resources
 
 .PHONY: deploy
 deploy: ## Deploy Reloader controller resources to the K8s cluster
-	kubectl create namespace bank-vaults-infra --dry-run=client -o yaml | kubectl apply -f -
+	$(KUBECTL) create namespace bank-vaults-infra --dry-run=client -o yaml | $(KUBECTL) apply -f -
 	$(HELM) upgrade --install vault-secrets-reloader deploy/charts/vault-secrets-reloader \
 		--set image.tag=dev \
 		--set collectorSyncPeriod=30s \
 		--set reloaderRunPeriod=1m \
 		--namespace bank-vaults-infra
 
+.PHONY: upload-kind
+upload-kind:
+	$(KIND) load docker-image $(IMG) --name $(TEST_KIND_CLUSTER) ## Load docker image to kind cluster
+
 .PHONY: deploy-kind
-deploy-kind: ## Deploy Reloder controller resources to the kind cluster
-	kind load docker-image $(IMG) --name $(TEST_KIND_CLUSTER)
-	kubectl create namespace bank-vaults-infra --dry-run=client -o yaml | kubectl apply -f -
-	$(HELM) upgrade --install vault-secrets-reloader deploy/charts/vault-secrets-reloader \
-		--set image.tag=dev \
-		--set collectorSyncPeriod=30s \
-		--set reloaderRunPeriod=1m \
-		--namespace bank-vaults-infra
+deploy-kind: upload-kind deploy ## Deploy Reloder controller resources to the kind cluster
 
 .PHONY: undeploy
 undeploy: ## Clean manager resources from the K8s cluster.
@@ -151,6 +148,7 @@ undeploy: ## Clean manager resources from the K8s cluster.
 GOLANGCI_VERSION = 1.53.3
 LICENSEI_VERSION = 0.8.0
 KIND_VERSION = 0.20.0
+KUBECTL_VERSION = 1.28.3
 HELM_DOCS_VERSION = 1.11.0
 
 ## Location to install dependencies to
@@ -166,17 +164,6 @@ GOLANGCI_LINT ?= $(or $(shell which golangci-lint),$(LOCALBIN)/golangci-lint)
 $(GOLANGCI_LINT): $(LOCALBIN)
 	test -s $(LOCALBIN)/golangci-lint || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- v${GOLANGCI_VERSION}
 
-LICENSEI ?= $(or $(shell which licensei),$(LOCALBIN)/licensei)
-$(LICENSEI): $(LOCALBIN)
-	test -s $(LOCALBIN)/licensei || curl -sfL https://raw.githubusercontent.com/goph/licensei/master/install.sh | bash -s -- v${LICENSEI_VERSION}
-
-KIND ?= $(or $(shell which kind),$(LOCALBIN)/kind)
-$(KIND): $(LOCALBIN)
-	@if [ ! -s "$(LOCALBIN)/kind" ]; then \
-		curl -Lo $(LOCALBIN)/kind https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-$(shell uname -s | tr '[:upper:]' '[:lower:]')-$(shell uname -m | sed -e "s/aarch64/arm64/; s/x86_64/amd64/"); \
-		chmod +x $(LOCALBIN)/kind; \
-	fi
-
 HELM ?= $(or $(shell which helm),$(LOCALBIN)/helm)
 $(HELM): $(LOCALBIN)
 	test -s $(LOCALBIN)/helm || curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | USE_SUDO=false HELM_INSTALL_DIR=$(LOCALBIN) bash
@@ -188,9 +175,27 @@ $(HELM_DOCS): $(LOCALBIN)
 		chmod +x $(LOCALBIN)/helm-docs; \
 	fi
 
+KIND ?= $(or $(shell which kind),$(LOCALBIN)/kind)
+$(KIND): $(LOCALBIN)
+	@if [ ! -s "$(LOCALBIN)/kind" ]; then \
+		curl -Lo $(LOCALBIN)/kind https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-$(shell uname -s | tr '[:upper:]' '[:lower:]')-$(shell uname -m | sed -e "s/aarch64/arm64/; s/x86_64/amd64/"); \
+		chmod +x $(LOCALBIN)/kind; \
+	fi
+
+KUBECTL ?= $(or $(shell which kubectl),$(LOCALBIN)/kubectl)
+$(KUBECTL): $(LOCALBIN)
+	@if [ ! -s "$(LOCALBIN)/kubectl" ]; then \
+		curl -Lo $(LOCALBIN)/kubectl https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/$(shell uname -s | tr '[:upper:]' '[:lower:]')/$(shell uname -m | sed -e "s/aarch64/arm64/; s/x86_64/amd64/")/kubectl; \
+		chmod +x $(LOCALBIN)/kubectl; \
+	fi
+
+LICENSEI ?= $(or $(shell which licensei),$(LOCALBIN)/licensei)
+$(LICENSEI): $(LOCALBIN)
+	test -s $(LOCALBIN)/licensei || curl -sfL https://raw.githubusercontent.com/goph/licensei/master/install.sh | bash -s -- v${LICENSEI_VERSION}
+
 # TODO: add support for hadolint and yamllint dependencies
 HADOLINT ?= hadolint
 YAMLLINT ?= yamllint
 
 .PHONY: deps
-deps: $(HELM) $(HELM_DOCS) $(ENVTEST) $(GOLANGCI_LINT) $(LICENSEI) $(KIND) ## Download and install dependencies
+deps: $(ENVTEST) $(GOLANGCI_LINT) $(HELM) $(HELM_DOCS) $(KIND) $(KUBECTL) $(LICENSEI) ## Download and install dependencies
