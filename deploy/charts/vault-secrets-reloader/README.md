@@ -23,7 +23,7 @@ You can prepare a separate namespace for Vault Secrets Reloader beforehand, crea
 **Install the chart**
 
 ```shell
-helm upgrade --install vault-secrets-reloader oci://ghcr.io/bank-vaults/vault-secrets-reloader --namespace bank-vaults-infra --create-namespace
+helm upgrade --install vault-secrets-reloader oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-reloader --namespace bank-vaults-infra --create-namespace
 ```
 
 ## Values
