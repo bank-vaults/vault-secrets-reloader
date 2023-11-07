@@ -66,7 +66,7 @@ data collection and reloading periods (using Go Duration format) that work best 
 example:
 
 ```shell
-helm upgrade --install vault-secrets-reloader oci://ghcr.io/bank-vaults/vault-secrets-reloader \
+helm upgrade --install vault-secrets-reloader oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-reloader \
     --set collectorSyncPeriod=2h \
     --set reloaderRunPeriod=4h \
     --set env.VAULT_ADDR=[URL for Vault]
