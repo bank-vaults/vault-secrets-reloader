@@ -22,9 +22,36 @@ You can prepare a separate namespace for Vault Secrets Reloader beforehand, crea
 
 **Install the chart**
 
-```shell
-helm upgrade --install vault-secrets-reloader oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-reloader --namespace bank-vaults-infra --create-namespace
-```
+1. Save Reloader default chart values:
+
+	```shell
+	helm show values oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-reloader > values.yaml
+	```
+
+2. Check the configuration in `values.yaml` and update the required values if needed. Configure the time for periodic runs of the `collector` and `reloader` workers with a value in Go Duration format:
+
+	```yaml
+	collectorSyncPeriod: 30m
+	reloaderRunPeriod: 1h
+	```
+
+	Additionally, Reloader needs to be supplied with Vault credentials to be able to connect to Vault in order to get the secrets. You can check the list of environmental variables accepted for creating a Vault client [here](https://developer.hashicorp.com/vault/docs/commands#environment-variables). For example:
+
+	```yaml
+	env:
+	  # define env vars for Vault used for authentication
+	  VAULT_ROLE: "reloader"
+	  VAULT_ADDR: "https://vault.default.svc.cluster.local:8200"
+	  VAULT_NAMESPACE: "default"
+	  VAULT_TLS_SECRET: "vault-tls"
+	  VAULT_TLS_SECRET_NS: "bank-vaults-infra"
+	```
+
+3. Install the chart:
+
+	```shell
+	helm upgrade --install --values values.yaml vault-secrets-reloader oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-reloader --namespace bank-vaults-infra --create-namespace
+	```
 
 ## Values
 
@@ -37,7 +64,7 @@ The following table lists the configurable parameters of the Helm chart.
 | `autoscaling.maxReplicas` | int | `100` | Maximum number of replicas |
 | `autoscaling.minReplicas` | int | `1` | Minimum number of replicas |
 | `collectorSyncPeriod` | string | `"30m"` | Time interval for the collector worker to run in Go Duration format |
-| `env` | object | `{"VAULT_ADDR":"https://vault.default.svc.cluster.local:8200","VAULT_ROLE":"reloader","VAULT_TLS_SECRET":"vault-tls","VAULT_TLS_SECRET_NS":"bank-vaults-infra"}` | Custom environment variables available to Reloader Define environment variables for Vault authentication here |
+| `env` | object | `{}` | Environment variables e.g. for Vault authentication |
 | `fullnameOverride` | string | `""` | Override app full name |
 | `image.imagePullSecrets` | list | `[]` | Container image pull secrets for private repositories |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Container image pull policy |
@@ -71,27 +98,6 @@ The following table lists the configurable parameters of the Helm chart.
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`.
 
-### Time periods
+### Vault settings
 
-Configure the time for periodic runs of the `collector` and `reloader` workers with a value in Go Duration format:
-
-```yaml
-collectorSyncPeriod: 30m
-reloaderRunPeriod: 1h
-```
-
-### Vault credentials
-
- Reloader needs to be supplied with Vault credentials to be able to connect to Vault in order to get the secrets. You can check the list of environmental variables accepted for creating a Vault client [here](https://developer.hashicorp.com/vault/docs/commands#environment-variables). For example:
-
-```yaml
-env:
-  # define env vars for Vault used for authentication
-  VAULT_ROLE: "reloader"
-  VAULT_ADDR: "https://vault.default.svc.cluster.local:8200"
-  VAULT_NAMESPACE: "default"
-  VAULT_TLS_SECRET: "vault-tls"
-  VAULT_TLS_SECRET_NS: "bank-vaults-infra"
-```
-
-In addition to that, make sure to add the `read` and `list` capabilities for secrets to the Vault auth role the Reloader will use. An example can be found in the [example Bank-Vaults Operator CR file](https://github.com/bank-vaults/vault-secrets-reloader/blob/main/e2e/deploy/vault/vault.yaml#L102).
+Make sure to add the `read` and `list` capabilities for secrets to the Vault auth role the Reloader will use. An example can be found in the [example Bank-Vaults Operator CR file](https://github.com/bank-vaults/vault-secrets-reloader/blob/main/e2e/deploy/vault/vault.yaml#L102).

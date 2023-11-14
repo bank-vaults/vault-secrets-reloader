@@ -69,10 +69,15 @@ test-e2e-local: ## Run e2e tests locally
 run: ## Run manager from your host
 	go run main.go -log_level=debug -collector_sync_period=30s -reloader_run_period=1m
 
-.PHONY: up
-up: ## Start kind development environment
+.PHONY: create-kind
+create-kind: ## Create kind cluster
 	$(KIND) create cluster --name $(TEST_KIND_CLUSTER)
-	sleep 10
+
+.PHONY: up-kind
+up-kind: create-kind up ## Start kind development environment
+
+.PHONY: up
+up: ## Start development environment
 	$(HELM) upgrade --install vault-operator oci://ghcr.io/bank-vaults/helm-charts/vault-operator \
 		--set image.tag=latest \
 		--set image.bankVaultsTag=latest \
@@ -129,6 +134,10 @@ deploy: ## Deploy Reloader controller resources to the K8s cluster
 		--set image.tag=dev \
 		--set collectorSyncPeriod=30s \
 		--set reloaderRunPeriod=1m \
+		--set env.VAULT_ROLE=reloader \
+		--set env.VAULT_ADDR=https://vault.default.svc.cluster.local:8200 \
+		--set env.VAULT_TLS_SECRET=vault-tls \
+		--set env.VAULT_TLS_SECRET_NS=bank-vaults-infra \
 		--namespace bank-vaults-infra
 
 .PHONY: upload-kind

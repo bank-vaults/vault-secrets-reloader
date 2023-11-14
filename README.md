@@ -93,7 +93,7 @@ Prepare the environment:
 make deps
 
 # start a kind cluster with Bank-Vaults operator, a Vault instance and Vault Secrets Webhook
-make up
+make up-kind
 
 # build the Vault Secrets Reloader image
 make container-image
@@ -109,6 +109,10 @@ helm upgrade --install vault-secrets-reloader deploy/charts/vault-secrets-reload
     --set image.tag=dev \
     --set collectorSyncPeriod=30s \
     --set reloaderRunPeriod=1m \
+    --set env.VAULT_ROLE=reloader \
+    --set env.VAULT_ADDR=https://vault.default.svc.cluster.local:8200 \
+    --set env.VAULT_TLS_SECRET=vault-tls \
+    --set env.VAULT_TLS_SECRET_NS=bank-vaults-infra \
     --namespace bank-vaults-infra
 ```
 

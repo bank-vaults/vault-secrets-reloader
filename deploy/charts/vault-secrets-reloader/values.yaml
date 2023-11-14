@@ -87,14 +87,13 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-# -- Custom environment variables available to Reloader
-# Define environment variables for Vault authentication here
-env:
-  VAULT_ROLE: "reloader"
-  VAULT_ADDR: "https://vault.default.svc.cluster.local:8200"
+# -- Environment variables e.g. for Vault authentication
+env: {}
+  # VAULT_ROLE: "reloader"
+  # VAULT_ADDR: "https://vault.default.svc.cluster.local:8200"
   # VAULT_NAMESPACE: "default"
-  VAULT_TLS_SECRET: "vault-tls"
-  VAULT_TLS_SECRET_NS: "bank-vaults-infra"
+  # VAULT_TLS_SECRET: "vault-tls"
+  # VAULT_TLS_SECRET_NS: "bank-vaults-infra"
   # VAULT_SKIP_VERIFY: "false"
   # VAULT_AUTH_METHOD: "kubernetes"
   # VAULT_PATH: "kubernetes"
