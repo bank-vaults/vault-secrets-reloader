@@ -16,9 +16,9 @@ image:
   tag: ""
   # -- Container image pull policy
   pullPolicy: IfNotPresent
+  # -- Container image pull secrets for private repositories
+  imagePullSecrets: []
 
-# -- Container image pull secrets for private repositories
-imagePullSecrets: []
 # -- Override app name
 nameOverride: ""
 # -- Override app full name

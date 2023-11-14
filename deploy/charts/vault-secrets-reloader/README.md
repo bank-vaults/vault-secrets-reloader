@@ -39,10 +39,10 @@ The following table lists the configurable parameters of the Helm chart.
 | `collectorSyncPeriod` | string | `"30m"` | Time interval for the collector worker to run in Go Duration format |
 | `env` | object | `{"VAULT_ADDR":"https://vault.default.svc.cluster.local:8200","VAULT_ROLE":"reloader","VAULT_TLS_SECRET":"vault-tls","VAULT_TLS_SECRET_NS":"bank-vaults-infra"}` | Custom environment variables available to Reloader Define environment variables for Vault authentication here |
 | `fullnameOverride` | string | `""` | Override app full name |
+| `image.imagePullSecrets` | list | `[]` | Container image pull secrets for private repositories |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Container image pull policy |
 | `image.repository` | string | `"ghcr.io/bank-vaults/vault-secrets-reloader"` | Container image repo that contains the Reloader Controller |
 | `image.tag` | string | `""` | Container image tag |
-| `imagePullSecrets` | list | `[]` | Container image pull secrets for private repositories |
 | `ingress.annotations` | object | `{}` | Reloader ingress annotations |
 | `ingress.className` | string | `""` | Reloader IngressClass name |
 | `ingress.enabled` | bool | `false` | Enable Reloader ingress |
