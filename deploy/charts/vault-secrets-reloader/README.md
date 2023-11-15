@@ -73,7 +73,7 @@ The following table lists the configurable parameters of the Helm chart.
 | `ingress.annotations` | object | `{}` | Reloader ingress annotations |
 | `ingress.className` | string | `""` | Reloader IngressClass name |
 | `ingress.enabled` | bool | `false` | Enable Reloader ingress |
-| `ingress.hosts` | list | `[{"host":"chart-example.local","paths":[{"path":"/","pathType":"ImplementationSpecific"}]}]` | Reloader ingress hosts |
+| `ingress.hosts` | list | `[]` | Reloader ingress hosts |
 | `ingress.tls` | list | `[]` | Reloader ingress tls |
 | `logLevel` | string | `"info"` | Log level |
 | `nameOverride` | string | `""` | Override app name |
