@@ -81,7 +81,6 @@ The following table lists the configurable parameters of the Helm chart.
 | `podAnnotations` | object | `{}` | Extra annotations to add to pod metadata |
 | `podSecurityContext` | object | `{}` | Pod security context for Reloader deployment |
 | `reloaderRunPeriod` | string | `"1h"` | Time interval for the reloader worker to run in Go Duration format |
-| `replicaCount` | int | `1` | Number of replicas |
 | `resources` | object | `{}` | Resources to request for the deployment and pods |
 | `securityContext` | object | `{}` | Pod security context for Reloader containers |
 | `service.annotations` | object | `{}` | Reloader service annotations, e.g. if type is AWS LoadBalancer and you want to add security groups |
