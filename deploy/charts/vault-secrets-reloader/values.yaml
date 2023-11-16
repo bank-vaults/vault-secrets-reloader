@@ -2,9 +2,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# -- Number of replicas
-replicaCount: 1
-
 # -- Log level
 logLevel: info
 
@@ -16,9 +13,9 @@ image:
   tag: ""
   # -- Container image pull policy
   pullPolicy: IfNotPresent
+  # -- Container image pull secrets for private repositories
+  imagePullSecrets: []
 
-# -- Container image pull secrets for private repositories
-imagePullSecrets: []
 # -- Override app name
 nameOverride: ""
 # -- Override app full name
@@ -76,25 +73,24 @@ ingress:
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   # -- Reloader ingress hosts
-  hosts:
-    - host: chart-example.local
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
+  hosts: []
+    # - host: chart-example.local
+    #   paths:
+    #     - path: /
+    #       pathType: ImplementationSpecific
   # -- Reloader ingress tls
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
 
-# -- Custom environment variables available to Reloader
-# Define environment variables for Vault authentication here
-env:
-  VAULT_ROLE: "reloader"
-  VAULT_ADDR: "https://vault.default.svc.cluster.local:8200"
+# -- Environment variables e.g. for Vault authentication
+env: {}
+  # VAULT_ROLE: "reloader"
+  # VAULT_ADDR: "https://vault.default.svc.cluster.local:8200"
   # VAULT_NAMESPACE: "default"
-  VAULT_TLS_SECRET: "vault-tls"
-  VAULT_TLS_SECRET_NS: "bank-vaults-infra"
+  # VAULT_TLS_SECRET: "vault-tls"
+  # VAULT_TLS_SECRET_NS: "bank-vaults-infra"
   # VAULT_SKIP_VERIFY: "false"
   # VAULT_AUTH_METHOD: "kubernetes"
   # VAULT_PATH: "kubernetes"

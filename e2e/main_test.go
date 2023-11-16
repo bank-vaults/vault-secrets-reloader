@@ -162,7 +162,7 @@ func installVaultSecretsWebhook(ctx context.Context, cfg *envconf.Config) (conte
 	manager := helm.New(cfg.KubeconfigFile())
 
 	err := manager.RunInstall(
-		helm.WithName("vault-secrets-webhook"), // This is weird that ReleaseName works differently, but it is what it is
+		helm.WithName("vault-secrets-webhook"),
 		helm.WithChart("oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook"),
 		helm.WithNamespace("bank-vaults-infra"),
 		helm.WithArgs("--set", "replicaCount=1", "--set", "podsFailurePolicy=Fail", "--set", "vaultEnv.tag=latest"),
@@ -207,10 +207,10 @@ func installVaultSecretsReloader(ctx context.Context, cfg *envconf.Config) (cont
 	}
 
 	err := manager.RunInstall(
-		helm.WithName("vault-secrets-reloader"), // This is weird that ReleaseName works differently, but it is what it is
+		helm.WithName("vault-secrets-reloader"),
 		helm.WithChart(chart),
 		helm.WithNamespace("bank-vaults-infra"),
-		helm.WithArgs("--set", "image.tag="+version, "--set", "logLevel=debug", "--set", "collectorSyncPeriod=15s", "--set", "reloaderRunPeriod=30s"),
+		helm.WithArgs("--set", "image.tag="+version, "--set", "logLevel=debug", "--set", "collectorSyncPeriod=15s", "--set", "reloaderRunPeriod=15s", "--set", "env.VAULT_ROLE=reloader", "--set", "env.VAULT_ADDR=https://vault.default.svc.cluster.local:8200", "--set", "env.VAULT_TLS_SECRET=vault-tls", "--set", "env.VAULT_TLS_SECRET_NS=bank-vaults-infra"),
 		helm.WithWait(),
 		helm.WithTimeout("3m"),
 	)

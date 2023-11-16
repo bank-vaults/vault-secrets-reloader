@@ -1,4 +1,3 @@
-# deployment to be reloaded
 apiVersion: apps/v1
 kind: Deployment
 metadata:
