@@ -124,6 +124,28 @@ func TestWorkloadReload(t *testing.T) {
 
 			return ctx
 		}).
+		Assess("deployment witch secret path annotation reloaded", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			deployment := &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-deployment-annotated-reload", Namespace: cfg.Namespace()},
+			}
+			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(deployment, func(obj k8s.Object) bool {
+				return obj.(*appsv1.Deployment).Spec.Template.Annotations[reloader.ReloadCountAnnotationName] == "1"
+			}), wait.WithTimeout(3*time.Minute))
+			require.NoError(t, err)
+
+			return ctx
+		}).
+		Assess("deployment witch secret path annotation not reloaded", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			deployment := &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-deployment-annotated-no-reload", Namespace: cfg.Namespace()},
+			}
+			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(deployment, func(obj k8s.Object) bool {
+				return obj.(*appsv1.Deployment).Spec.Template.Annotations[reloader.ReloadCountAnnotationName] == ""
+			}), wait.WithTimeout(3*time.Minute))
+			require.NoError(t, err)
+
+			return ctx
+		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			err := decoder.DecodeEachFile(
 				ctx, os.DirFS("deploy/workloads"), "*",
@@ -152,7 +174,7 @@ func applyWorkloads() *features.FeatureBuilder {
 			// workloadsAvailable fails on Github Runners, so waiting a little for the workloads to come up is fine for now
 			// err = workloadsAvailable(cfg)
 			// require.NoError(t, err)
-			time.Sleep(3 * time.Minute)
+			time.Sleep(2 * time.Minute)
 
 			return ctx
 		})

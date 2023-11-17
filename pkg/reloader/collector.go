@@ -23,6 +23,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const VaultEnvSecretPathsAnnotation = "vault.security.banzaicloud.io/vault-env-from-path"
+
 type workloadSecretsStore interface {
 	Store(workload workload, secrets []string)
 	Delete(workload workload)
@@ -77,11 +79,10 @@ func (w *workloadSecrets) GetSecretWorkloadsMap() map[string][]workload {
 
 func (c *Controller) collectWorkloadSecrets(workload workload, template corev1.PodTemplateSpec) {
 	collectorLogger := c.logger.WithField("worker", "collector")
-	containers := []corev1.Container{}
-	containers = append(containers, template.Spec.Containers...)
-	containers = append(containers, template.Spec.InitContainers...)
 
-	vaultSecretPaths := collectSecretsFromContainerEnvVars(containers)
+	// Collect secrets from different locations
+	vaultSecretPaths := collectSecrets(template)
+
 	if len(vaultSecretPaths) == 0 {
 		collectorLogger.Debug("No Vault secret paths found in container env vars")
 		return
@@ -93,24 +94,51 @@ func (c *Controller) collectWorkloadSecrets(workload workload, template corev1.P
 	collectorLogger.Infof("Collected secrets from %s %s/%s", workload.kind, workload.namespace, workload.name)
 }
 
+func collectSecrets(template corev1.PodTemplateSpec) []string {
+	containers := []corev1.Container{}
+	containers = append(containers, template.Spec.Containers...)
+	containers = append(containers, template.Spec.InitContainers...)
+
+	vaultSecretPaths := []string{}
+	vaultSecretPaths = append(vaultSecretPaths, collectSecretsFromContainerEnvVars(containers)...)
+	vaultSecretPaths = append(vaultSecretPaths, collectSecretsFromAnnotations(template.GetAnnotations())...)
+
+	// Remove duplicates
+	slices.Sort(vaultSecretPaths)
+	return slices.Compact(vaultSecretPaths)
+}
+
 func collectSecretsFromContainerEnvVars(containers []corev1.Container) []string {
-	// Iterate through all environment variables and extract secrets
-	var vaultSecrets []string
+	vaultSecretPaths := []string{}
+	// iterate through all environment variables and extract secrets
 	for _, container := range containers {
 		for _, env := range container.Env {
 			// Skip if env var does not contain a vault secret or is a secret with pinned version
 			if hasVaultPrefix(env.Value) && unversionedSecretValue(env.Value) {
 				secret := regexp.MustCompile(`vault:(.*?)#`).FindStringSubmatch(env.Value)[1]
 				if secret != "" {
-					vaultSecrets = append(vaultSecrets, secret)
+					vaultSecretPaths = append(vaultSecretPaths, secret)
 				}
 			}
 		}
 	}
 
-	// Remove duplicates
-	slices.Sort(vaultSecrets)
-	return slices.Compact(vaultSecrets)
+	return vaultSecretPaths
+}
+
+func collectSecretsFromAnnotations(annotations map[string]string) []string {
+	vaultSecretPaths := []string{}
+
+	secretPaths := annotations[VaultEnvSecretPathsAnnotation]
+	if secretPaths != "" {
+		for _, secretPath := range strings.Split(secretPaths, ",") {
+			if unversionedAnnotationSecretValue(secretPath) {
+				vaultSecretPaths = append(vaultSecretPaths, secretPath)
+			}
+		}
+	}
+
+	return vaultSecretPaths
 }
 
 // copied from bank-vaults/vault-secrets-webhook/pkg/webhook/common.go
@@ -122,4 +150,9 @@ func hasVaultPrefix(value string) bool {
 func unversionedSecretValue(value string) bool {
 	split := strings.SplitN(value, "#", 3)
 	return len(split) == 2
+}
+
+func unversionedAnnotationSecretValue(value string) bool {
+	split := strings.SplitN(value, "#", 2)
+	return len(split) == 1
 }
