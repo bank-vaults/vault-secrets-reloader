@@ -17,10 +17,10 @@ package reloader
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	vaultapi "github.com/hashicorp/vault/api"
-	"github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +46,7 @@ type Controller struct {
 	kubeClient  kubernetes.Interface
 	vaultClient *vaultapi.Client
 	vaultConfig *VaultConfig
-	logger      *logrus.Entry
+	logger      *slog.Logger
 
 	deploymentsLister  appslisters.DeploymentLister
 	deploymentsSynced  cache.InformerSynced
@@ -62,7 +62,7 @@ type Controller struct {
 
 // NewController returns a new sample controller
 func NewController(
-	logger *logrus.Entry,
+	logger *slog.Logger,
 	kubeClient kubernetes.Interface,
 	deploymentInformer appsinformers.DeploymentInformer,
 	daemonSetInformer appsinformers.DaemonSetInformer,
@@ -160,7 +160,7 @@ func (c *Controller) handleObject(obj interface{}) {
 	if podTemplateSpec.GetAnnotations()[SecretReloadAnnotationName] != "true" {
 		return
 	}
-	c.logger.Debugf("Processing workload: %#v", workloadData)
+	c.logger.Debug(fmt.Sprintf("Processing workload: %#v", workloadData))
 	c.collectWorkloadSecrets(workloadData, podTemplateSpec)
 }
 
@@ -180,7 +180,7 @@ func (c *Controller) handleObjectDelete(obj interface{}) {
 			c.logger.Error("error decoding object tombstone, invalid type")
 			return
 		}
-		c.logger.Debug("Recovered deleted object: ", object.GetName())
+		c.logger.Debug(fmt.Sprintf("Recovered deleted object: %s", object.GetName()))
 	}
 
 	var workloadData workload
@@ -207,6 +207,6 @@ func (c *Controller) handleObjectDelete(obj interface{}) {
 	if podTemplateSpec.GetAnnotations()[SecretReloadAnnotationName] != "true" {
 		return
 	}
-	c.logger.Debugf("Deleting workload from store: %#v", workloadData)
+	c.logger.Debug(fmt.Sprintf("Deleting workload from store: %#v", workloadData))
 	c.workloadSecrets.Delete(workloadData)
 }

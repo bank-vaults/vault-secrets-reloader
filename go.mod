@@ -6,7 +6,7 @@ require (
 	github.com/bank-vaults/vault-operator v1.21.2
 	github.com/bank-vaults/vault-sdk v0.9.0
 	github.com/hashicorp/vault/api v1.10.0
-	github.com/sirupsen/logrus v1.9.3
+	github.com/samber/slog-multi v1.0.2
 	github.com/stretchr/testify v1.8.4
 	k8s.io/api v0.28.4
 	k8s.io/apiextensions-apiserver v0.28.4
@@ -14,7 +14,6 @@ require (
 	k8s.io/client-go v0.28.4
 	k8s.io/klog/v2 v2.110.1
 	k8s.io/sample-controller v0.28.3
-	logur.dev/adapter/logrus v0.5.0
 	sigs.k8s.io/controller-runtime v0.16.3
 	sigs.k8s.io/e2e-framework v0.3.0
 )
@@ -84,6 +83,8 @@ require (
 	github.com/prometheus/procfs v0.10.1 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sagikazarmark/docker-ref v0.1.0 // indirect
+	github.com/samber/lo v1.38.1 // indirect
+	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vladimirvivien/gexe v0.2.0 // indirect
@@ -112,7 +113,6 @@ require (
 	k8s.io/component-base v0.28.4 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
 	k8s.io/utils v0.0.0-20230505201702-9f6742963106 // indirect
-	logur.dev/logur v0.16.1 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect

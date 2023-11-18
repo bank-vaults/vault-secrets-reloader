@@ -27,7 +27,6 @@ import (
 	"github.com/bank-vaults/vault-sdk/vault"
 	vaultapi "github.com/hashicorp/vault/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	logrusadapter "logur.dev/adapter/logrus"
 )
 
 type VaultConfig struct {
@@ -142,7 +141,7 @@ func (c *Controller) initVaultClient() error {
 		vault.ClientRole(c.vaultConfig.Role),
 		vault.ClientAuthPath(c.vaultConfig.Path),
 		vault.ClientAuthMethod(c.vaultConfig.AuthMethod),
-		vault.ClientLogger(logrusadapter.NewFromEntry(c.logger)),
+		vault.ClientLogger(&clientLogger{logger: c.logger}),
 		vault.VaultNamespace(c.vaultConfig.Namespace),
 	)
 	if err != nil {
