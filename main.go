@@ -45,6 +45,7 @@ func main() {
 	reloaderRunPeriod := flag.Duration("reloader_run_period", defaultReloaderRunPeriod,
 		"Determines the minimum frequency at which watched resources are reloaded")
 	logLevel := flag.String("log_level", "info", "Log level (debug, info, warn, error).")
+	enableJSONLog := flag.Bool("enable_json_log", false, "Enable JSON logging")
 	flag.Parse()
 
 	// Set up signals so we handle the shutdown signal gracefully
@@ -68,6 +69,19 @@ func main() {
 
 		router := slogmulti.Router()
 
+		if *enableJSONLog {
+			// Send logs with level higher than warning to stderr
+			router = router.Add(
+				slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}),
+				levelFilter(slog.LevelWarn, slog.LevelError),
+			)
+
+			// Send info and debug logs to stdout
+			router = router.Add(
+				slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}),
+				levelFilter(slog.LevelDebug, slog.LevelInfo),
+			)
+		} else {
 			// Send logs with level higher than warning to stderr
 			router = router.Add(
 				slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}),
@@ -79,6 +93,8 @@ func main() {
 				slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level}),
 				levelFilter(slog.LevelDebug, slog.LevelInfo),
 			)
+		}
+
 		// TODO: add level filter handler
 		logger = slog.New(router.Handler())
 		logger = logger.With(slog.String("app", "vault-secrets-reloader"))
