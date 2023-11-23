@@ -19,6 +19,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestWorkloadSecretsStore(t *testing.T) {
@@ -66,56 +67,65 @@ func TestWorkloadSecretsStore(t *testing.T) {
 	})
 }
 
-func TestCollectSecretsFromContainerEnvVars(t *testing.T) {
-	containers := []corev1.Container{
-		{
-			Name: "container1",
-			Env: []corev1.EnvVar{
-				// this should be ignored
-				{
-					Name:  "ENV1",
-					Value: "value1",
-				},
-				// this should be present in the result only once
-				{
-					Name:  "AWS_SECRET_ACCESS_KEY",
-					Value: "vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY",
-				},
-				// this should be present in the result
-				{
-					Name:  "MYSQL_PASSWORD",
-					Value: "vault:secret/data/mysql#${.MYSQL_PASSWORD}",
-				},
+func TestCollectSecrets(t *testing.T) {
+	template := corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"vault.security.banzaicloud.io/vault-env-from-path": "secret/data/foo,secret/data/bar#1",
 			},
 		},
-		{
-			Name: "container2",
-			Env: []corev1.EnvVar{
-				// this should be ignored (no prefix)
+		Spec: corev1.PodSpec{
+			InitContainers: []corev1.Container{
 				{
-					Name:  "GCP_SECRET",
-					Value: "secret/data/accounts/gcp#GCP_SECRET",
+					Name: "container1",
+					Env: []corev1.EnvVar{
+						// this should be ignored
+						{
+							Name:  "ENV1",
+							Value: "value1",
+						},
+						// this should be present in the result only once
+						{
+							Name:  "AWS_SECRET_ACCESS_KEY",
+							Value: "vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY",
+						},
+						// this should be present in the result
+						{
+							Name:  "MYSQL_PASSWORD",
+							Value: "vault:secret/data/mysql#${.MYSQL_PASSWORD}",
+						},
+					},
 				},
-				// this should be ignored (no secret value)
+			},
+			Containers: []corev1.Container{
 				{
-					Name:  "AZURE_SECRET",
-					Value: "vault:secret/data/accounts/azure",
-				},
-				// this should be present in the result only once
-				{
-					Name:  "AWS_SECRET_ACCESS_KEY",
-					Value: "vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY",
-				},
-				// this should be ignored, as it is versioned
-				{
-					Name:  "DOCKER_REPO_PASSWORD",
-					Value: "vault:secret/data/dockerrepo#${.DOCKER_REPO_PASSWORD}#1",
+					Name: "container2",
+					Env: []corev1.EnvVar{
+						// this should be ignored (no prefix)
+						{
+							Name:  "GCP_SECRET",
+							Value: "secret/data/accounts/gcp#GCP_SECRET",
+						},
+						// this should be ignored (no secret value)
+						{
+							Name:  "AZURE_SECRET",
+							Value: "vault:secret/data/accounts/azure",
+						},
+						// this should be present in the result only once
+						{
+							Name:  "AWS_SECRET_ACCESS_KEY",
+							Value: "vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY",
+						},
+						// this should be ignored, as it is versioned
+						{
+							Name:  "DOCKER_REPO_PASSWORD",
+							Value: "vault:secret/data/dockerrepo#${.DOCKER_REPO_PASSWORD}#1",
+						},
+					},
 				},
 			},
 		},
 	}
 
-	result := collectSecretsFromContainerEnvVars(containers)
-
-	assert.Equal(t, []string{"secret/data/accounts/aws", "secret/data/mysql"}, result)
+	assert.Equal(t, []string{"secret/data/accounts/aws", "secret/data/foo", "secret/data/mysql"}, collectSecrets(template))
 }

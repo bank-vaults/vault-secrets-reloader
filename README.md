@@ -40,22 +40,48 @@ Upon deployment, the Reloader spawns two “workers”, that run periodically at
 are supported yet.
 
 - It can only “reload” Deployments, DaemonSets and StatefulSets that have the
-  `alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation set among their
-  `spec.template.metadata.annotations`.
+`alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation set among their
+`spec.template.metadata.annotations`.
 
-- It can only watch secrets put in the workload’s pod template environment variables directly, in the format the
-  `vault-secrets-webhook` also uses, and are unversioned, for example:
+- The `collector` can only look for secrets in the workload’s pod template environment variables directly, and in their
+`vault.security.banzaicloud.io/vault-env-from-path` annotation, in the format the `vault-secrets-webhook` also uses, and
+are unversioned, for example:
 
   ```yaml
-  env:
-    - name: AWS_SECRET_ACCESS_KEY
-      value: "vault:secret/data/accounts/aws#AWS_SECRET_ACCESS_KEY" # this will be collected for version check
-    - name: MYSQL_PASSWORD
-      value: "vault:secret/data/mysql#${.MYSQL_PASSWORD}#1" # versioned secrets will not be collected
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: hello-secrets
+  spec:
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: hello-secrets
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: hello-secrets
+        annotations:
+          vault.security.banzaicloud.io/vault-addr: "https://vault:8200"
+          vault.security.banzaicloud.io/vault-tls-secret: vault-tls
+          vault.security.banzaicloud.io/vault-env-from-path: "secret/data/accounts/aws,secret/data/accounts/azure#1" # all paths will be collected except for versioned ones
+          alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
+      spec:
+        initContainers:
+        - name: init-ubuntu
+          image: ubuntu
+          command: ["sh", "-c", "echo $AWS_ACCESS_KEY_ID && echo initContainers ready"]
+        containers:
+        - name: alpine
+          image: alpine
+          command: ["sh", "-c", "echo $AWS_SECRET_ACCESS_KEY && echo $DOCKER_REPO_PASSWORD && echo $MYSQL_PASSWORD && echo going to sleep... && sleep 10000"]
+          env:
+            - name: MYSQL_PASSWORD
+              value: "vault:secret/data/mysql#${.MYSQL_PASSWORD}#1" # versioned secrets will not be collected
+            - name: DOCKER_REPO_PASSWORD
+              value: vault:secret/data/dockerrepo#${.DOCKER_REPO_PASSWORD} # this will be collected for version check
   ```
 
-- Data collected by the `reloader` is only stored in-memory (secret version updates during the controller is being
-  recreated will not be acted upon, as it will rebuild its data store from scratch on start).
+- Data collected by the `reloader` is only stored in-memory.
 
 ## Configuration
 
@@ -262,9 +288,6 @@ make artifacts
 make down
 ```
 
-
 ## License
 
 The project is licensed under the [Apache 2.0 License](LICENSE).
-
-
