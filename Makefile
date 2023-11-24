@@ -67,7 +67,7 @@ test-e2e-local: ## Run e2e tests locally
 
 .PHONY: run
 run: ## Run manager from your host
-	go run main.go -log_level=debug -collector_sync_period=30s -reloader_run_period=1m
+	go run main.go -log-level=debug -collector-sync-period=30s -reloader-run-period=1m
 
 .PHONY: create-kind
 create-kind: ## Create kind cluster

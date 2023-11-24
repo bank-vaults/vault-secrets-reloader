@@ -38,14 +38,14 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             - vault-secrets-reloader
-            - -log_level
+            - -log-level
             - {{ .Values.logLevel }}
             {{- if .Values.enableJSONLog }}
-            - -enable_json_log
+            - -enable-json-log
             {{- end }}
-            - -collector_sync_period
+            - -collector-sync-period
             - {{ .Values.collectorSyncPeriod }}
-            - -reloader_run_period
+            - -reloader-run-period
             - {{ .Values.reloaderRunPeriod }}
           env:
             - name: LISTEN_ADDRESS
