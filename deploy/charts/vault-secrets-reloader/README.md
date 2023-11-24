@@ -64,6 +64,7 @@ The following table lists the configurable parameters of the Helm chart.
 | `autoscaling.maxReplicas` | int | `100` | Maximum number of replicas |
 | `autoscaling.minReplicas` | int | `1` | Minimum number of replicas |
 | `collectorSyncPeriod` | string | `"30m"` | Time interval for the collector worker to run in Go Duration format |
+| `enableJSONLog` | bool | `false` | Use JSON log format instead of text |
 | `env` | object | `{}` | Environment variables e.g. for Vault authentication |
 | `fullnameOverride` | string | `""` | Override app full name |
 | `image.imagePullSecrets` | list | `[]` | Container image pull secrets for private repositories |

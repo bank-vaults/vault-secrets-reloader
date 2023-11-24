@@ -40,6 +40,9 @@ spec:
             - vault-secrets-reloader
             - -log_level
             - {{ .Values.logLevel }}
+            {{- if .Values.enableJSONLog }}
+            - -enable_json_log
+            {{- end }}
             - -collector_sync_period
             - {{ .Values.collectorSyncPeriod }}
             - -reloader_run_period

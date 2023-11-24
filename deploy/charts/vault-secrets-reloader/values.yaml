@@ -4,6 +4,8 @@
 
 # -- Log level
 logLevel: info
+# -- Use JSON log format instead of text
+enableJSONLog: false
 
 image:
   # -- Container image repo that contains the Reloader Controller

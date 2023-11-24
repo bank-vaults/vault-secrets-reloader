@@ -15,12 +15,16 @@
 package main
 
 import (
+	"context"
 	"flag"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
+	"slices"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	slogmulti "github.com/samber/slog-multi"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/sample-controller/pkg/signals"
@@ -40,22 +44,62 @@ func main() {
 		"Determines the minimum frequency at which watched resources are reconciled")
 	reloaderRunPeriod := flag.Duration("reloader_run_period", defaultReloaderRunPeriod,
 		"Determines the minimum frequency at which watched resources are reloaded")
-	logLevel := flag.String("log_level", "info", "Log level (debug, info, warn, error, fatal, panic).")
+	logLevel := flag.String("log_level", "info", "Log level (debug, info, warn, error).")
+	enableJSONLog := flag.Bool("enable_json_log", false, "Enable JSON logging")
 	flag.Parse()
 
 	// Set up signals so we handle the shutdown signal gracefully
 	ctx := signals.SetupSignalHandler()
-	var logger *logrus.Entry
+
+	// Setup logger
+	var logger *slog.Logger
 	{
-		l := logrus.New()
+		var level slog.Level
 
-		lvl, err := logrus.ParseLevel(*logLevel)
-		if err != nil {
-			lvl = logrus.InfoLevel
+		err := level.UnmarshalText([]byte(*logLevel))
+		if err != nil { // Silently fall back to info level
+			level = slog.LevelInfo
 		}
-		l.SetLevel(lvl)
 
-		logger = l.WithField("app", "vault-secrets-reloader")
+		levelFilter := func(levels ...slog.Level) func(ctx context.Context, r slog.Record) bool {
+			return func(ctx context.Context, r slog.Record) bool {
+				return slices.Contains(levels, r.Level)
+			}
+		}
+
+		router := slogmulti.Router()
+
+		if *enableJSONLog {
+			// Send logs with level higher than warning to stderr
+			router = router.Add(
+				slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}),
+				levelFilter(slog.LevelWarn, slog.LevelError),
+			)
+
+			// Send info and debug logs to stdout
+			router = router.Add(
+				slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}),
+				levelFilter(slog.LevelDebug, slog.LevelInfo),
+			)
+		} else {
+			// Send logs with level higher than warning to stderr
+			router = router.Add(
+				slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}),
+				levelFilter(slog.LevelWarn, slog.LevelError),
+			)
+
+			// Send info and debug logs to stdout
+			router = router.Add(
+				slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level}),
+				levelFilter(slog.LevelDebug, slog.LevelInfo),
+			)
+		}
+
+		// TODO: add level filter handler
+		logger = slog.New(router.Handler())
+		logger = logger.With(slog.String("app", "vault-secrets-reloader"))
+
+		slog.SetDefault(logger)
 	}
 
 	// Handler for health checks
@@ -75,12 +119,14 @@ func main() {
 	// Create kubernetes client
 	kubeConfig, err := config.GetConfig()
 	if err != nil {
-		logger.Fatalf("error building kubeconfig: %s", err)
+		logger.Error(fmt.Errorf("error building kubeconfig: %s", err).Error())
+		os.Exit(1)
 	}
 
 	kubeClient, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
-		logger.Fatalf("error building kubernetes clientset: %s", err)
+		logger.Error(fmt.Errorf("error building kubernetes clientset: %s", err).Error())
+		os.Exit(1)
 	}
 
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, *collectorSyncPeriod)
@@ -96,6 +142,7 @@ func main() {
 	kubeInformerFactory.Start(ctx.Done())
 
 	if err = controller.Run(ctx, *reloaderRunPeriod); err != nil {
-		logger.Fatalf("error running controller: %s", err)
+		logger.Error(fmt.Errorf("error running controller: %s", err).Error())
+		os.Exit(1)
 	}
 }

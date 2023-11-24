@@ -15,6 +15,8 @@
 package reloader
 
 import (
+	"fmt"
+	"log/slog"
 	"regexp"
 	"slices"
 	"strings"
@@ -78,7 +80,7 @@ func (w *workloadSecrets) GetSecretWorkloadsMap() map[string][]workload {
 }
 
 func (c *Controller) collectWorkloadSecrets(workload workload, template corev1.PodTemplateSpec) {
-	collectorLogger := c.logger.WithField("worker", "collector")
+	collectorLogger := c.logger.With(slog.String("worker", "collector"))
 
 	// Collect secrets from different locations
 	vaultSecretPaths := collectSecrets(template)
@@ -87,11 +89,11 @@ func (c *Controller) collectWorkloadSecrets(workload workload, template corev1.P
 		collectorLogger.Debug("No Vault secret paths found in container env vars")
 		return
 	}
-	collectorLogger.Debugf("Vault secret paths found: %v", vaultSecretPaths)
+	collectorLogger.Debug(fmt.Sprintf("Vault secret paths found: %v", vaultSecretPaths))
 
 	// Add workload and secrets to workloadSecrets map
 	c.workloadSecrets.Store(workload, vaultSecretPaths)
-	collectorLogger.Infof("Collected secrets from %s %s/%s", workload.kind, workload.namespace, workload.name)
+	collectorLogger.Info(fmt.Sprintf("Collected secrets from %s %s/%s", workload.kind, workload.namespace, workload.name))
 }
 
 func collectSecrets(template corev1.PodTemplateSpec) []string {

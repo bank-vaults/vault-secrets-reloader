@@ -17,14 +17,15 @@ package reloader
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (c *Controller) runReloader(ctx context.Context) {
-	reloaderLogger := c.logger.WithContext(ctx).WithField("worker", "reloader")
+func (c *Controller) runReloader(ctx context.Context) { //nolint:revive
+	reloaderLogger := c.logger.With(slog.String("worker", "reloader"))
 	reloaderLogger.Info("Reloader started")
 
 	if len(c.workloadSecrets.GetWorkloadSecretsMap()) == 0 {
@@ -43,20 +44,20 @@ func (c *Controller) runReloader(ctx context.Context) {
 	workloadsToReload := make(map[workload]bool)
 	newSecretVersions := make(map[string]int)
 	for secretPath, workloads := range c.workloadSecrets.GetSecretWorkloadsMap() {
-		reloaderLogger.Debug("Checking secret: ", secretPath)
+		reloaderLogger.Debug(fmt.Sprintf("Checking secret: %s", secretPath))
 		// Get current secret version
 		currentVersion, err := getSecretVersionFromVault(c.vaultClient.Logical(), secretPath)
 		if err != nil {
 			switch err.(type) {
 			case ErrSecretNotFound:
 				if !c.vaultConfig.IgnoreMissingSecrets {
-					reloaderLogger.Error(err)
+					reloaderLogger.Error(err.Error())
 				}
 				if c.vaultConfig.IgnoreMissingSecrets {
-					reloaderLogger.Warnf(
+					reloaderLogger.Warn(fmt.Sprintf(
 						"Path not found: %s - We couldn't find a secret path. This is not an error since missing secrets can be ignored according to the configuration you've set (env: VAULT_IGNORE_MISSING_SECRETS).",
 						secretPath,
-					)
+					))
 				}
 				continue
 
@@ -68,16 +69,16 @@ func (c *Controller) runReloader(ctx context.Context) {
 
 		// Compare current version with the secretVersions map
 		if c.secretVersions[secretPath] == 0 {
-			reloaderLogger.Debugf("Secret %s not found in secretVersions map, creating it", secretPath)
+			reloaderLogger.Debug(fmt.Sprintf("Secret %s not found in secretVersions map, creating it", secretPath))
 			newSecretVersions[secretPath] = currentVersion
 			continue
 		}
 		if c.secretVersions[secretPath] == currentVersion {
-			reloaderLogger.Debugf("Secret %s did not change", secretPath)
+			reloaderLogger.Debug(fmt.Sprintf("Secret %s did not change", secretPath))
 			newSecretVersions[secretPath] = currentVersion
 			continue
 		}
-		reloaderLogger.Debugf("Secret version stored: %d current: %d", c.secretVersions[secretPath], currentVersion)
+		reloaderLogger.Debug(fmt.Sprintf("Secret version stored: %d current: %d", c.secretVersions[secretPath], currentVersion))
 		for _, workload := range workloads {
 			workloadsToReload[workload] = true
 		}
@@ -86,16 +87,16 @@ func (c *Controller) runReloader(ctx context.Context) {
 
 	// Reloading workloads
 	for workload := range workloadsToReload {
-		reloaderLogger.Info("Reloading workload: ", workload)
+		reloaderLogger.Info(fmt.Sprintf("Reloading workload: %s", workload))
 		err := c.reloadWorkload(workload)
 		if err != nil {
-			reloaderLogger.Error("failed reloading workload: ", workload, err)
+			reloaderLogger.Error(fmt.Errorf("failed reloading workload: %s: %w", workload, err).Error())
 		}
 	}
 
 	// Replace secretVersions map with the new one so we don't keep deleted secrets in the map
 	c.secretVersions = newSecretVersions
-	reloaderLogger.Debug("Updated secretVersions map: ", newSecretVersions)
+	reloaderLogger.Debug(fmt.Sprintf("Updated secretVersions map: %#v", newSecretVersions))
 
 	if len(workloadsToReload) == 0 {
 		reloaderLogger.Info("No workloads to reload")
