@@ -1,0 +1,120 @@
+direction: right
+
+Cluster: "" {
+	icon: https://icons.terrastruct.com/azure%2F_Companies%2FKubernetes.svg
+
+	style: {
+		border-radius: 15
+	}
+
+	NamespaceA: namespace {
+		direction: right
+
+		style: {
+			opacity: 0.7
+			border-radius: 15
+			fill: white
+			stroke: white
+		}
+
+		Vault: Vault {
+			shape: image
+			icon: https://www.svgrepo.com/download/448679/vault.svg
+		}
+
+		BVOperator: Vault Operator {
+			shape: hexagon
+			icon: https://raw.githubusercontent.com/bank-vaults/bank-vaults.dev/main/assets/icons/logo.svg
+		}
+
+		BVOperator -> Vault
+	}
+
+	NamespaceB: namespace {
+		style: {
+			opacity: 0.7
+			border-radius: 15
+			fill: white
+			stroke: white
+		}
+
+		BVWebhook: Vault Secrets Webhook {
+			shape: parallelogram
+			icon: https://raw.githubusercontent.com/bank-vaults/bank-vaults.dev/main/assets/icons/logo.svg
+		}
+
+		BVReloader: Vault Secrets Reloader {
+			shape: hexagon
+			icon: https://raw.githubusercontent.com/bank-vaults/bank-vaults.dev/main/assets/icons/logo.svg
+		}
+	}
+
+	NamespaceC: namespace {
+		direction: right
+
+		style: {
+			opacity: 0.7
+			border-radius: 15
+			fill: white
+			stroke: white
+		}
+
+		Workload: Workload\n(with Reloader-specific annotation) {
+			style: {
+				multiple: true
+				stroke: green
+			}
+		}
+
+		Pod: Pod {
+			style: {
+				multiple: true
+				stroke: green
+			}
+		}
+
+		Workload -> Pod: 3 {
+			style: {
+					stroke: green
+					stroke-dash: 5
+					font-size: 24
+					font-color: black
+				}
+		}
+	}
+
+	NamespaceB.BVReloader <-> NamespaceC.Workload: 1 {
+		style: {
+			font-size: 24
+			font-color: black
+		}
+	}
+
+	NamespaceB.BVReloader <-> NamespaceA.Vault: 2 {
+		style: {
+			font-size: 24
+			font-color: black
+		}
+	}
+
+	NamespaceB.BVReloader -> NamespaceC.Workload: 3 {
+		style: {
+			font-size: 24
+			font-color: black
+		}
+	}
+
+	NamespaceB.BVWebhook <-> NamespaceA.Vault: 4 {
+		style: {
+			font-size: 24
+			font-color: black
+		}
+	}
+
+	NamespaceB.BVWebhook -> NamespaceC.Pod: 4 {
+		style: {
+			font-size: 24
+			font-color: black
+		}
+	}
+}
