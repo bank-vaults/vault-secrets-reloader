@@ -27,8 +27,8 @@ import (
 	slogmulti "github.com/samber/slog-multi"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/sample-controller/pkg/signals"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	"github.com/bank-vaults/vault-secrets-reloader/pkg/reloader"
 )
