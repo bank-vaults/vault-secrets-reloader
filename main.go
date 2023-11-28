@@ -40,12 +40,12 @@ const (
 
 func main() {
 	// Register CLI flags
-	collectorSyncPeriod := flag.Duration("collector_sync_period", defaultSyncPeriod,
+	collectorSyncPeriod := flag.Duration("collector-sync-period", defaultSyncPeriod,
 		"Determines the minimum frequency at which watched resources are reconciled")
-	reloaderRunPeriod := flag.Duration("reloader_run_period", defaultReloaderRunPeriod,
+	reloaderRunPeriod := flag.Duration("reloader-run-period", defaultReloaderRunPeriod,
 		"Determines the minimum frequency at which watched resources are reloaded")
-	logLevel := flag.String("log_level", "info", "Log level (debug, info, warn, error).")
-	enableJSONLog := flag.Bool("enable_json_log", false, "Enable JSON logging")
+	logLevel := flag.String("log-level", "info", "Log level (debug, info, warn, error).")
+	enableJSONLog := flag.Bool("enable-json-log", false, "Enable JSON logging")
 	flag.Parse()
 
 	// Set up signals so we handle the shutdown signal gracefully
