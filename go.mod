@@ -4,7 +4,7 @@ go 1.21.1
 
 require (
 	github.com/bank-vaults/vault-operator v1.21.2
-	github.com/bank-vaults/vault-sdk v0.9.1
+	github.com/bank-vaults/vault-sdk v0.9.2
 	github.com/hashicorp/vault/api v1.10.0
 	github.com/samber/slog-multi v1.0.2
 	github.com/stretchr/testify v1.8.4
@@ -23,7 +23,7 @@ require (
 	cloud.google.com/go/iam v1.1.3 // indirect
 	emperror.dev/errors v0.8.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
-	github.com/aws/aws-sdk-go v1.47.5 // indirect
+	github.com/aws/aws-sdk-go v1.49.8 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v3 v3.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
@@ -86,15 +86,15 @@ require (
 	github.com/sagikazarmark/docker-ref v0.1.0 // indirect
 	github.com/samber/lo v1.38.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
-	github.com/spf13/cast v1.5.1 // indirect
+	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vladimirvivien/gexe v0.2.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
-	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/oauth2 v0.13.0 // indirect
+	golang.org/x/net v0.19.0 // indirect
+	golang.org/x/oauth2 v0.15.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/term v0.15.0 // indirect
