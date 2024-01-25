@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/vault/api v1.10.0
 	github.com/samber/slog-multi v1.0.2
 	github.com/stretchr/testify v1.8.4
-	k8s.io/api v0.29.0
+	k8s.io/api v0.29.1
 	k8s.io/apiextensions-apiserver v0.29.0
 	k8s.io/apimachinery v0.29.1
 	k8s.io/client-go v0.29.0
