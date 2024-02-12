@@ -13,7 +13,11 @@ ignored = [
   "github.com/gogo/protobuf", # 3-Clause BSD
   "logur.dev/adapter/logrus", # MIT
   "logur.dev/logur", # MIT
-  "github.com/hashicorp/vault/api", # MPL-2.0
+  "github.com/hashicorp/vault/api", # Mozilla Public License 2.0
+  "github.com/hashicorp/vault/api/auth/aws", # Mozilla Public License 2.0
+  "github.com/hashicorp/vault/api/auth/azure", # Mozilla Public License 2.0
+  "github.com/hashicorp/vault/api/auth/gcp", # Mozilla Public License 2.0
+  "github.com/hashicorp/vault/api/auth/kubernetes", # Mozilla Public License 2.0
 
   # Unsupported VCS
   "google.golang.org/protobuf",
