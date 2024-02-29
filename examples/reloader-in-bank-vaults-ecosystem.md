@@ -1,6 +1,6 @@
 # Vault Secrets Reloader and the Bank-Vaults ecosystem
 
-If you are familiar with the Bank-Vaults [Vault Secrets Webhook](https://github.com/bank-vaults/vault-secrets-webhook), you are probably aware of it only injecting secrets when the pods are created/recreated, and until the release of this tool, there were no solution within the Bank-Vaults ecosystem to inject secrets into these workloads in a continuous manner. Vault Secrets Reloader offers Vault Secrets Webhook users an automated solution for this problem.
+If you are familiar with the Bank-Vaults [Secrets Webhook](https://github.com/bank-vaults/secrets-webhook), you are probably aware of it only injecting secrets when the pods are created/recreated, and until the release of this tool, there were no solution within the Bank-Vaults ecosystem to inject secrets into these workloads in a continuous manner. Vault Secrets Reloader offers Secrets Webhook users an automated solution for this problem.
 
 This is a high level overview of how the Reloader plays along with other components of the Bank-Vaults ecosystem:
 
