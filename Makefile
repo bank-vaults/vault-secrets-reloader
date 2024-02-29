@@ -89,12 +89,12 @@ up: ## Start development environment
 	$(KUBECTL) create namespace bank-vaults-infra --dry-run=client -o yaml | $(KUBECTL) apply -f -
 	$(KUBECTL) apply -f $(shell pwd)/e2e/deploy/vault/
 	sleep 60
-	$(HELM) upgrade --install vault-secrets-webhook oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook \
+	$(HELM) upgrade --install secrets-webhook oci://ghcr.io/bank-vaults/helm-charts/secrets-webhook \
 		--set replicaCount=1 \
 		--set image.tag=latest \
 		--set image.pullPolicy=IfNotPresent \
 		--set podsFailurePolicy=Fail \
-		--set vaultEnv.tag=latest \
+		--set secretInit.tag=latest \
 		--namespace bank-vaults-infra
 
 .PHONY: down

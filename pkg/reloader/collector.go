@@ -22,10 +22,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bank-vaults/secrets-webhook/pkg/common"
 	corev1 "k8s.io/api/core/v1"
 )
-
-const VaultEnvSecretPathsAnnotation = "vault.security.banzaicloud.io/vault-env-from-path"
 
 type workloadSecretsStore interface {
 	Store(workload workload, secrets []string)
@@ -116,7 +115,7 @@ func collectSecretsFromContainerEnvVars(containers []corev1.Container) []string 
 	for _, container := range containers {
 		for _, env := range container.Env {
 			// Skip if env var does not contain a vault secret or is a secret with pinned version
-			if hasVaultPrefix(env.Value) && unversionedSecretValue(env.Value) {
+			if common.hasVaultPrefix(env.Value) && unversionedSecretValue(env.Value) {
 				secret := regexp.MustCompile(`vault:(.*?)#`).FindStringSubmatch(env.Value)[1]
 				if secret != "" {
 					vaultSecretPaths = append(vaultSecretPaths, secret)
@@ -131,7 +130,7 @@ func collectSecretsFromContainerEnvVars(containers []corev1.Container) []string 
 func collectSecretsFromAnnotations(annotations map[string]string) []string {
 	vaultSecretPaths := []string{}
 
-	secretPaths := annotations[VaultEnvSecretPathsAnnotation]
+	secretPaths := annotations[common.VaultFromPathAnnotation]
 	if secretPaths != "" {
 		for _, secretPath := range strings.Split(secretPaths, ",") {
 			if unversionedAnnotationSecretValue(secretPath) {
@@ -143,12 +142,7 @@ func collectSecretsFromAnnotations(annotations map[string]string) []string {
 	return vaultSecretPaths
 }
 
-// copied from bank-vaults/vault-secrets-webhook/pkg/webhook/common.go
-func hasVaultPrefix(value string) bool {
-	return strings.HasPrefix(value, "vault:") || strings.HasPrefix(value, ">>vault:")
-}
-
-// implementation based on bank-vaults/vault-secrets-webhook/internal/injector/injector.go
+// implementation based on bank-vaults/internal/injector/injector.go
 func unversionedSecretValue(value string) bool {
 	split := strings.SplitN(value, "#", 3)
 	return len(split) == 2

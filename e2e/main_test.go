@@ -162,16 +162,16 @@ func installVaultSecretsWebhook(ctx context.Context, cfg *envconf.Config) (conte
 	manager := helm.New(cfg.KubeconfigFile())
 
 	err := manager.RunInstall(
-		helm.WithName("vault-secrets-webhook"),
-		helm.WithChart("oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook"),
+		helm.WithName("secrets-webhook"),
+		helm.WithChart("oci://ghcr.io/bank-vaults/helm-charts/secrets-webhook"),
 		helm.WithNamespace("bank-vaults-infra"),
-		helm.WithArgs("--set", "replicaCount=1", "--set", "podsFailurePolicy=Fail", "--set", "vaultEnv.tag=latest"),
+		helm.WithArgs("--set", "replicaCount=1", "--set", "podsFailurePolicy=Fail", "--set", "secretInit.tag=latest"),
 		helm.WithVersion(vaultSecretsWebhookVersion),
 		helm.WithWait(),
 		helm.WithTimeout("3m"),
 	)
 	if err != nil {
-		return ctx, fmt.Errorf("installing vault-secrets-webhook: %w", err)
+		return ctx, fmt.Errorf("installing secrets-webhook: %w", err)
 	}
 
 	return ctx, nil
@@ -181,13 +181,13 @@ func uninstallVaultSecretsWebhook(ctx context.Context, cfg *envconf.Config) (con
 	manager := helm.New(cfg.KubeconfigFile())
 
 	err := manager.RunUninstall(
-		helm.WithName("vault-secrets-webhook"),
+		helm.WithName("secrets-webhook"),
 		helm.WithNamespace("bank-vaults-infra"),
 		helm.WithWait(),
 		helm.WithTimeout("3m"),
 	)
 	if err != nil {
-		return ctx, fmt.Errorf("uninstalling vault-secrets-webhook: %w", err)
+		return ctx, fmt.Errorf("uninstalling secrets-webhook: %w", err)
 	}
 
 	return ctx, nil

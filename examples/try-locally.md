@@ -3,7 +3,7 @@
 To gain experience in this tool, and to get familiar with the potential of the Bank-Vaults ecosystem, in this guidle we will:
 
 - start a [kind](https://kind.sigs.k8s.io/) cluster
-- install the [Vault Operator](https://github.com/bank-vaults/vault-operator), [Vault Secrets Webhook](https://github.com/bank-vaults/vault-secrets-webhook) and Vault Secrets Reloader all configured to work together nicely
+- install the [Vault Operator](https://github.com/bank-vaults/vault-operator), [Secrets Webhook](https://github.com/bank-vaults/secrets-webhook) and Vault Secrets Reloader all configured to work together nicely
 - start a Vault instance
 - deploy some workloads
 - try out some scenarios with the Reloader
@@ -18,7 +18,7 @@ Clone the [repo](https://github.com/bank-vaults/vault-secrets-reloader) and `cd`
 # install dependencies
 make deps
 
-# start a kind cluster with Bank-Vaults operator, a Vault instance and Vault Secrets Webhook
+# start a kind cluster with Bank-Vaults operator, a Vault instance and Secrets Webhook
 make up-kind
 
 # build the Vault Secrets Reloader image

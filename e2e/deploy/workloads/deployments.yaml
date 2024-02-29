@@ -137,7 +137,7 @@ spec:
       annotations:
         vault.security.banzaicloud.io/vault-addr: "https://vault:8200"
         vault.security.banzaicloud.io/vault-tls-secret: vault-tls
-        vault.security.banzaicloud.io/vault-env-from-path: "secret/data/accounts/aws"
+        vault.security.banzaicloud.io/vault-from-path: "secret/data/accounts/aws"
         alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
     spec:
       containers:
@@ -175,7 +175,7 @@ spec:
       annotations:
         vault.security.banzaicloud.io/vault-addr: "https://vault:8200"
         vault.security.banzaicloud.io/vault-tls-secret: vault-tls
-        vault.security.banzaicloud.io/vault-env-from-path: "secret/data/dockerrepo#1"
+        vault.security.banzaicloud.io/vault-from-path: "secret/data/dockerrepo#1"
         alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
     spec:
       containers:
