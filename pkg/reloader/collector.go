@@ -115,7 +115,7 @@ func collectSecretsFromContainerEnvVars(containers []corev1.Container) []string 
 	for _, container := range containers {
 		for _, env := range container.Env {
 			// Skip if env var does not contain a vault secret or is a secret with pinned version
-			if common.hasVaultPrefix(env.Value) && unversionedSecretValue(env.Value) {
+			if common.HasVaultPrefix(env.Value) && unversionedSecretValue(env.Value) {
 				secret := regexp.MustCompile(`vault:(.*?)#`).FindStringSubmatch(env.Value)[1]
 				if secret != "" {
 					vaultSecretPaths = append(vaultSecretPaths, secret)
