@@ -6,7 +6,7 @@ Reloader will collect (unversioned) secrets injected by the Webhook from watched
 
 ## Before you start
 
-Reloader works in conjunction with the [Vault Secrets Webhook](https://github.com/bank-vaults/vault-secrets-webhook), therefore the prerequisites to start using it would be a Hashicorp Vault instance, and a working Webhook.
+Reloader works in conjunction with the [Secrets Webhook](https://github.com/bank-vaults/secrets-webhook), therefore the prerequisites to start using it would be a Hashicorp Vault instance, and a working Webhook.
 
 You will need to add the following annotations to the pod template spec of the workloads (i.e. Deployments, DaemonSets and StatefulSets) that you wish to reload:
 
@@ -18,7 +18,7 @@ alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
 
 **Prepare Kubernetes namespace**
 
-You can prepare a separate namespace for Vault Secrets Reloader beforehand, create it automatically if not yet exist with appending `--create-namespace` to the installation Helm command, or just use the one already created for Vault Secrets Webhook.
+You can prepare a separate namespace for Vault Secrets Reloader beforehand, create it automatically if not yet exist with appending `--create-namespace` to the installation Helm command, or just use the one already created for Secrets Webhook.
 
 **Install the chart**
 

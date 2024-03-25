@@ -1,6 +1,6 @@
 # Vault Secrets Reloader
 
-Vault Secrets Reloader can periodically check if a secret that is used in watched workloads has a new version in Hashicorp Vault, and if so, automatically “reloads” them by incrementing an annotation value, initiating a rollout for the workload’s pods. This controller is essentially a complementary to `vault-secrets-webhook`, relying on it for actually injecting secrets into the pods of the affected workloads.
+Vault Secrets Reloader can periodically check if a secret that is used in watched workloads has a new version in Hashicorp Vault, and if so, automatically “reloads” them by incrementing an annotation value, initiating a rollout for the workload’s pods. This controller is essentially a complementary to `secrets-webhook`, relying on it for actually injecting secrets into the pods of the affected workloads.
 
 > [!IMPORTANT]
 > This is an **early alpha version** and breaking changes are expected. As such, it is not recommended
@@ -28,7 +28,7 @@ To get familiarized, check out [how Reloader fits in the Bank-Vaults ecosystem](
 
 - It can only “reload” Deployments, DaemonSets and StatefulSets that have the `alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation set among their `spec.template.metadata.annotations`.
 
-- The `collector` can only look for secrets in the workload’s pod template environment variables directly, and in their `vault.security.banzaicloud.io/vault-env-from-path` annotation, in the format the `vault-secrets-webhook` also uses, and are unversioned.
+- The `collector` can only look for secrets in the workload’s pod template environment variables directly, and in their `vault.security.banzaicloud.io/vault-from-path` annotation, in the format the `secrets-webhook` also uses, and are unversioned.
 
 - Data collected by the `reloader` is only stored in-memory.
 
