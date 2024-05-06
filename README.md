@@ -17,6 +17,7 @@ Upon deployment, the Reloader spawns two “workers”, that run periodically at
 2. The `reloader` iterates on the data collected by the `collector`, polling the configured Vault instance for the current version of the secrets, and if it finds that it differs from the stored one, adds the workloads where the secret is used to a list of workloads that needs reloading. In a following step, it modifies these workloads by incrementing the value of the `alpha.vault.security.banzaicloud.io/secret-reload-count` annotation in their pod template metadata, initiating a new rollout.
 
 To get familiarized, check out [how Reloader fits in the Bank-Vaults ecosystem](https://github.com/bank-vaults/vault-secrets-reloader/blob/main/examples/reloader-in-bank-vaults-ecosystem.md), and how can you [give Reloader a spin](https://github.com/bank-vaults/vault-secrets-reloader/blob/main/examples/try-locally.md) on your local machine.
+go
 
 ### Current features, limitations
 
