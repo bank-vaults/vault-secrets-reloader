@@ -31,7 +31,7 @@ To get familiarized, check out [how Reloader fits in the Bank-Vaults ecosystem](
 
 - It can only “reload” Deployments, DaemonSets and StatefulSets that have the `alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation set among their `spec.template.metadata.annotations`.
 
-- The `collector` can only look for secrets in the workload’s pod template environment variables directly, and in their `vault.security.banzaicloud.io/vault-from-path` annotation, in the format the `secrets-webhook` also uses, and are unversioned.
+- The `collector` can only look for secrets in the workload’s pod template environment variables directly, and in their `secrets-webhook.security.bank-vaults.io/vault-from-path` annotation, in the format the `secrets-webhook` also uses, and are unversioned.
 
 - Data collected by the `reloader` is only stored in-memory.
 
