@@ -62,7 +62,7 @@ func main() {
 		}
 
 		levelFilter := func(levels ...slog.Level) func(ctx context.Context, r slog.Record) bool {
-			return func(ctx context.Context, r slog.Record) bool {
+			return func(_ context.Context, r slog.Record) bool {
 				return slices.Contains(levels, r.Level)
 			}
 		}
@@ -110,7 +110,7 @@ func main() {
 
 	go func() {
 		_ = http.ListenAndServe(port, http.HandlerFunc(
-			func(w http.ResponseWriter, r *http.Request) {
+			func(w http.ResponseWriter, _ *http.Request) {
 				_, _ = w.Write([]byte("ok"))
 			},
 		))

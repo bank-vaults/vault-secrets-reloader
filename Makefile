@@ -41,12 +41,16 @@ lint-go: # Run golang lint check
 lint-helm: # Run helm lint check
 	$(HELM) lint deploy/charts/vault-secrets-reloader
 
+.PHONY: lint-yaml
+lint-yaml:
+	$(YAMLLINT) $(if ${CI},-f github,) --no-warnings .
+
 .PHONY: lint-docker
 lint-docker: # Run Dockerfile lint check
 	$(HADOLINT) Dockerfile
 
 .PHONY: lint
-lint: lint-go lint-helm lint-docker ## Run lint checks
+lint: lint-go lint-helm lint-yaml lint-docker ## Run lint checks
 
 .PHONY: test
 test: ## Run tests

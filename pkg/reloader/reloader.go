@@ -35,7 +35,7 @@ func (c *Controller) runReloader(ctx context.Context) { //nolint:revive
 
 	err := c.initVaultClient()
 	if err != nil {
-		reloaderLogger.Error("failed to initialize Vault client: ", err)
+		reloaderLogger.Error(fmt.Errorf("failed to initialize Vault client: %w", err).Error())
 		return
 	}
 
@@ -62,7 +62,7 @@ func (c *Controller) runReloader(ctx context.Context) { //nolint:revive
 				continue
 
 			default:
-				reloaderLogger.Error("failed to get secret version from Vault: ", err)
+				reloaderLogger.Error(fmt.Errorf("failed to get secret version: %w", err).Error())
 				continue
 			}
 		}
