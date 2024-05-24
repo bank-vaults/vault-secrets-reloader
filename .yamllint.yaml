@@ -1,6 +1,7 @@
-ignore-from-file: [.gitignore, .github/*, .yamllint.yaml, .hadolint.yaml, e2e/kind.yaml, .golangci.yaml]
+ignore-from-file: [.gitignore, .yamlignore]
 
 extends: default
 
 rules:
   line-length: disable
+  document-start: disable
