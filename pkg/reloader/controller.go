@@ -86,19 +86,19 @@ func NewController(
 	// Set up event handlers for Deployments, DaemonSets and StatefulSets
 	_, _ = deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.handleObject,
-		UpdateFunc: func(old, new interface{}) { controller.handleObject(new) },
+		UpdateFunc: func(_, new interface{}) { controller.handleObject(new) },
 		DeleteFunc: controller.handleObjectDelete,
 	})
 
 	_, _ = daemonSetInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.handleObject,
-		UpdateFunc: func(old, new interface{}) { controller.handleObject(new) },
+		UpdateFunc: func(_, new interface{}) { controller.handleObject(new) },
 		DeleteFunc: controller.handleObjectDelete,
 	})
 
 	_, _ = statefulSetInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.handleObject,
-		UpdateFunc: func(old, new interface{}) { controller.handleObject(new) },
+		UpdateFunc: func(_, new interface{}) { controller.handleObject(new) },
 		DeleteFunc: controller.handleObjectDelete,
 	})
 
