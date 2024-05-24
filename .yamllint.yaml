@@ -1,4 +1,4 @@
-ignore-from-file: [.gitignore, .yamlignore]
+ignore-from-file: [.gitignore, .github/*, .yamllint.yaml, .hadolint.yaml, e2e/kind.yaml, .golangci.yaml]
 
 extends: default
 
