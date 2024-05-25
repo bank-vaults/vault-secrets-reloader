@@ -139,10 +139,22 @@ func collectSecretsFromAnnotations(annotations map[string]string) []string {
 		}
 	}
 
+	// This is here to preserve backwards compatibility with the deprecated annotation
+	if len(vaultSecretPaths) == 0 {
+		deprecatedSecretPaths := annotations[common.VaultEnvFromPathAnnotationDeprecated]
+		if deprecatedSecretPaths != "" {
+			for _, secretPath := range strings.Split(deprecatedSecretPaths, ",") {
+				if unversionedAnnotationSecretValue(secretPath) {
+					vaultSecretPaths = append(vaultSecretPaths, secretPath)
+				}
+			}
+		}
+	}
+
 	return vaultSecretPaths
 }
 
-// implementation based on bank-vaults/internal/injector/injector.go
+// implementation based on bank-vaults/internal/pkg/injector/vault/injector.go
 func unversionedSecretValue(value string) bool {
 	split := strings.SplitN(value, "#", 3)
 	return len(split) == 2
