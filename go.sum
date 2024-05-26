@@ -1039,8 +1039,8 @@ github.com/sagikazarmark/docker-ref v0.1.0 h1:kqBsV+9tFFaM7Xgdc5pHQSmZXSid28fDLA
 github.com/sagikazarmark/docker-ref v0.1.0/go.mod h1:z9VrFKv1DK3pjm7QKrjkKs+vV80FmDZLxqTS5nRNC3w=
 github.com/samber/lo v1.39.0 h1:4gTz1wUhNYLhFSKl6O+8peW0v2F4BCY034GRpU9WnuA=
 github.com/samber/lo v1.39.0/go.mod h1:+m/ZKRl6ClXCE2Lgf3MsQlWfh4bn1bz6CXEOxnEXnEA=
-github.com/samber/slog-multi v1.0.2 h1:6BVH9uHGAsiGkbbtQgAOQJMpKgV8unMrHhhJaw+X1EQ=
-github.com/samber/slog-multi v1.0.2/go.mod h1:uLAvHpGqbYgX4FSL0p1ZwoLuveIAJvBECtE07XmYvFo=
+github.com/samber/slog-multi v1.0.3 h1:8wlX8ioZE38h91DwoJBVnC7JfhgwERwlekY+NHsVsv0=
+github.com/samber/slog-multi v1.0.3/go.mod h1:TvwgIK4XPBb8Dn18as5uiTHf7in8gN/AtUXsT57UYuo=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v1.3.3/go.mod h1:5KUK8ByomD5Ti5Artl0RtHeI5pTF7MIDuXL3yY520V4=
 github.com/spf13/afero v1.6.0/go.mod h1:Ai8FlHk4v/PARR026UzYexafAt9roJ7LcLMAmO6Z93I=
