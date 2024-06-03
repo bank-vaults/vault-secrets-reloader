@@ -1,6 +1,6 @@
 module github.com/bank-vaults/vault-secrets-reloader
 
-go 1.22.2
+go 1.22.3
 
 require (
 	github.com/bank-vaults/vault-operator v1.22.1
