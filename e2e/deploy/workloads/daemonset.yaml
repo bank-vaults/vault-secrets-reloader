@@ -12,6 +12,7 @@ spec:
       labels:
         app.kubernetes.io/name: reloader-test-daemonset
       annotations:
+        secrets-webhook.security.bank-vaults.io/provider: "vault"
         secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
         secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
         alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"

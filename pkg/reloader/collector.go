@@ -115,7 +115,7 @@ func collectSecretsFromContainerEnvVars(containers []corev1.Container) []string 
 	for _, container := range containers {
 		for _, env := range container.Env {
 			// Skip if env var does not contain a vault secret or is a secret with pinned version
-			if common.HasVaultPrefix(env.Value) && unversionedSecretValue(env.Value) {
+			if isValidPrefix(env.Value) && unversionedSecretValue(env.Value) {
 				secret := regexp.MustCompile(`vault:(.*?)#`).FindStringSubmatch(env.Value)[1]
 				if secret != "" {
 					vaultSecretPaths = append(vaultSecretPaths, secret)
@@ -152,6 +152,11 @@ func collectSecretsFromAnnotations(annotations map[string]string) []string {
 	}
 
 	return vaultSecretPaths
+}
+
+// implementation based on bank-vaults/secrets-webhook/pkg/provider/vault/provider.go
+func isValidPrefix(value string) bool {
+	return strings.HasPrefix(value, "vault:") || strings.HasPrefix(value, ">>vault:")
 }
 
 // implementation based on bank-vaults/internal/pkg/injector/vault/injector.go
