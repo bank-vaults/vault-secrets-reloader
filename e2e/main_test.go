@@ -43,9 +43,7 @@ import (
 	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
 
-// Upgrade this when a new version is released
-const vaultOperatorVersion = "1.21.2"
-const vaultSecretsWebhookVersion = "1.20.0"
+const defaultTimeout = 3 * time.Minute
 
 var testenv env.Environment
 
@@ -103,8 +101,8 @@ func TestMain(m *testing.M) {
 		testenv.Finish(uninstallVaultOperator)
 
 		// Install webhook
-		testenv.Setup(envfuncs.CreateNamespace("bank-vaults-infra"), installVaultSecretsWebhook)
-		testenv.Finish(uninstallVaultSecretsWebhook, envfuncs.DeleteNamespace("bank-vaults-infra"))
+		testenv.Setup(envfuncs.CreateNamespace("bank-vaults-infra"), installSecretsWebhook)
+		testenv.Finish(uninstallSecretsWebhook, envfuncs.DeleteNamespace("bank-vaults-infra"))
 
 		// Install reloader
 		testenv.Setup(installVaultSecretsReloader)
@@ -126,14 +124,18 @@ func TestMain(m *testing.M) {
 func installVaultOperator(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 	manager := helm.New(cfg.KubeconfigFile())
 
+	version := "latest"
+	if v := os.Getenv("OPERATOR_VERSION"); v != "" {
+		version = v
+	}
+
 	err := manager.RunInstall(
 		helm.WithName("vault-operator"), // This is weird that ReleaseName works differently, but it is what it is
 		helm.WithChart("oci://ghcr.io/bank-vaults/helm-charts/vault-operator"),
-		helm.WithNamespace("default"),
-		helm.WithArgs("--create-namespace"),
-		helm.WithVersion(vaultOperatorVersion),
+		helm.WithNamespace("vault-operator"),
+		helm.WithArgs("--create-namespace", "--set", "image.tag="+version),
 		helm.WithWait(),
-		helm.WithTimeout("3m"),
+		helm.WithTimeout(defaultTimeout.String()),
 	)
 	if err != nil {
 		return ctx, fmt.Errorf("installing vault-operator: %w", err)
@@ -149,7 +151,7 @@ func uninstallVaultOperator(ctx context.Context, cfg *envconf.Config) (context.C
 		helm.WithName("vault-operator"),
 		helm.WithNamespace("default"),
 		helm.WithWait(),
-		helm.WithTimeout("3m"),
+		helm.WithTimeout(defaultTimeout.String()),
 	)
 	if err != nil {
 		return ctx, fmt.Errorf("uninstalling vault-operator: %w", err)
@@ -158,36 +160,40 @@ func uninstallVaultOperator(ctx context.Context, cfg *envconf.Config) (context.C
 	return ctx, nil
 }
 
-func installVaultSecretsWebhook(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+func installSecretsWebhook(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 	manager := helm.New(cfg.KubeconfigFile())
 
+	version := "latest"
+	if v := os.Getenv("WEBHOOK_VERSION"); v != "" {
+		version = v
+	}
+
 	err := manager.RunInstall(
-		helm.WithName("vault-secrets-webhook"),
-		helm.WithChart("oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook"),
+		helm.WithName("secrets-webhook"),
+		helm.WithChart("oci://ghcr.io/bank-vaults/helm-charts/secrets-webhook"),
 		helm.WithNamespace("bank-vaults-infra"),
-		helm.WithArgs("--set", "replicaCount=1", "--set", "podsFailurePolicy=Fail", "--set", "vaultEnv.tag=latest"),
-		helm.WithVersion(vaultSecretsWebhookVersion),
+		helm.WithArgs("--set", "replicaCount=1", "--set", "podsFailurePolicy=Fail", "--set", "secretInit.tag=latest", "--set", "image.tag="+version),
 		helm.WithWait(),
-		helm.WithTimeout("3m"),
+		helm.WithTimeout(defaultTimeout.String()),
 	)
 	if err != nil {
-		return ctx, fmt.Errorf("installing vault-secrets-webhook: %w", err)
+		return ctx, fmt.Errorf("installing secrets-webhook: %w", err)
 	}
 
 	return ctx, nil
 }
 
-func uninstallVaultSecretsWebhook(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+func uninstallSecretsWebhook(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 	manager := helm.New(cfg.KubeconfigFile())
 
 	err := manager.RunUninstall(
-		helm.WithName("vault-secrets-webhook"),
+		helm.WithName("secrets-webhook"),
 		helm.WithNamespace("bank-vaults-infra"),
 		helm.WithWait(),
-		helm.WithTimeout("3m"),
+		helm.WithTimeout(defaultTimeout.String()),
 	)
 	if err != nil {
-		return ctx, fmt.Errorf("uninstalling vault-secrets-webhook: %w", err)
+		return ctx, fmt.Errorf("uninstalling secrets-webhook: %w", err)
 	}
 
 	return ctx, nil
@@ -212,7 +218,7 @@ func installVaultSecretsReloader(ctx context.Context, cfg *envconf.Config) (cont
 		helm.WithNamespace("bank-vaults-infra"),
 		helm.WithArgs("--set", "image.tag="+version, "--set", "logLevel=debug", "--set", "collectorSyncPeriod=15s", "--set", "reloaderRunPeriod=15s", "--set", "env.VAULT_ROLE=reloader", "--set", "env.VAULT_ADDR=https://vault.default.svc.cluster.local:8200", "--set", "env.VAULT_TLS_SECRET=vault-tls", "--set", "env.VAULT_TLS_SECRET_NS=bank-vaults-infra"),
 		helm.WithWait(),
-		helm.WithTimeout("3m"),
+		helm.WithTimeout(defaultTimeout.String()),
 	)
 	if err != nil {
 		return ctx, fmt.Errorf("installing vault-secrets-reloader: %w", err)
@@ -228,7 +234,7 @@ func uninstallVaultSecretsReloader(ctx context.Context, cfg *envconf.Config) (co
 		helm.WithName("vault-secrets-reloader"),
 		helm.WithNamespace("bank-vaults-infra"),
 		helm.WithWait(),
-		helm.WithTimeout("3m"),
+		helm.WithTimeout(defaultTimeout.String()),
 	)
 	if err != nil {
 		return ctx, fmt.Errorf("uninstalling vault-secrets-reloader: %w", err)
@@ -269,7 +275,7 @@ func installVault(ctx context.Context, cfg *envconf.Config) (context.Context, er
 	}
 
 	// wait for the statefulSet to become available
-	err = wait.For(conditions.New(r).ResourcesFound(statefulSets), wait.WithTimeout(3*time.Minute))
+	err = wait.For(conditions.New(r).ResourcesFound(statefulSets), wait.WithTimeout(defaultTimeout))
 	if err != nil {
 		return ctx, err
 	}
@@ -281,7 +287,7 @@ func installVault(ctx context.Context, cfg *envconf.Config) (context.Context, er
 	}
 
 	// wait for the pod to become available
-	err = wait.For(conditions.New(r).PodReady(&pod), wait.WithTimeout(3*time.Minute))
+	err = wait.For(conditions.New(r).PodReady(&pod), wait.WithTimeout(defaultTimeout))
 	if err != nil {
 		return ctx, err
 	}

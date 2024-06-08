@@ -71,7 +71,7 @@ func TestCollectSecrets(t *testing.T) {
 	template := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: map[string]string{
-				"vault.security.banzaicloud.io/vault-env-from-path": "secret/data/foo,secret/data/bar#1",
+				"secrets-webhook.security.bank-vaults.io/vault-from-path": "secret/data/foo,secret/data/bar#1",
 			},
 		},
 		Spec: corev1.PodSpec{

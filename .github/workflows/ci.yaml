@@ -221,6 +221,8 @@ jobs:
     strategy:
       matrix:
         k8s_version: ["v1.24.15", "v1.25.11", "v1.26.6", "v1.27.3"]
+        operator_version: ["v1.22.1", "v1.22.2"] # First version that works with the generic webhook: v1.22.1
+        webhook_version: ["v0.1.0"]
 
     steps:
       - name: Checkout repository
@@ -254,5 +256,7 @@ jobs:
           KIND_K8S_VERSION: ${{ matrix.k8s_version }}
           LOAD_IMAGE_ARCHIVE: ${{ github.workspace }}/docker.tar
           RELOADER_VERSION: ${{ needs.artifacts.outputs.container-image-tag }}
+          OPERATOR_VERSION: ${{ matrix.operator_version }}
+          WEBHOOK_VERSION: ${{ matrix.webhook_version }}
           HELM_CHART: "${{ github.workspace }}/${{ needs.artifacts.outputs.helm-chart-package }}"
           LOG_VERBOSE: "true"

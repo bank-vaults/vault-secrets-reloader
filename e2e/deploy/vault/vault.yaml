@@ -129,7 +129,7 @@ spec:
       - type: kubernetes
         roles:
           - name: default
-            bound_service_account_names: ["default", "vault-secrets-webhook"]
+            bound_service_account_names: ["default", "secrets-webhook"]
             bound_service_account_namespaces: ["default", "bank-vaults-infra"]
             policies: ["allow_secrets"]
             ttl: 1h
@@ -168,7 +168,7 @@ spec:
             MYSQL_ROOT_PASSWORD: s3cr3t
             MYSQL_PASSWORD: 3xtr3ms3cr3t
 
-  vaultEnvsConfig:
+  secretInitsConfig:
     - name: VAULT_LOG_LEVEL
       value: debug
     - name: VAULT_STORAGE_FILE

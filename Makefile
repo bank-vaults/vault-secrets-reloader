@@ -6,6 +6,9 @@ TEST_KIND_CLUSTER ?= vault-secrets-reloader
 # Target image name
 IMG ?= ghcr.io/bank-vaults/vault-secrets-reloader:dev
 
+# Operator image name
+OPERATOR_VERSION ?= latest
+WEBHOOK_VERSION ?= latest
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -63,9 +66,9 @@ test-e2e: ## Run acceptance tests. If running on a local kind cluster, run "make
 		go test -race -v -timeout 900s -tags e2e ./e2e
 
 .PHONY: test-e2e-local
-test-e2e-local: ## Run e2e tests locally
+test-e2e-local: container-image ## Run e2e tests locally
 		go clean -testcache
-		LOAD_IMAGE=${IMG} RELOADER_VERSION=dev LOG_VERBOSE=true ${MAKE} test-e2e
+		LOAD_IMAGE=${IMG} RELOADER_VERSION=dev OPERATOR_VERSION=$(OPERATOR_VERSION) WEBHOOK_VERSION=$(WEBHOOK_VERSION) LOG_VERBOSE=true ${MAKE} test-e2e
 
 ##@ Development
 
@@ -89,12 +92,12 @@ up: ## Start development environment
 	$(KUBECTL) create namespace bank-vaults-infra --dry-run=client -o yaml | $(KUBECTL) apply -f -
 	$(KUBECTL) apply -f $(shell pwd)/e2e/deploy/vault/
 	sleep 60
-	$(HELM) upgrade --install vault-secrets-webhook oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-webhook \
+	$(HELM) upgrade --install secrets-webhook oci://ghcr.io/bank-vaults/helm-charts/secrets-webhook \
 		--set replicaCount=1 \
 		--set image.tag=latest \
 		--set image.pullPolicy=IfNotPresent \
 		--set podsFailurePolicy=Fail \
-		--set vaultEnv.tag=latest \
+		--set secretInit.tag=latest \
 		--namespace bank-vaults-infra
 
 .PHONY: down

@@ -12,8 +12,8 @@ spec:
       labels:
         app.kubernetes.io/name: reloader-test-deployment-to-be-reloaded
       annotations:
-        vault.security.banzaicloud.io/vault-addr: "https://vault:8200"
-        vault.security.banzaicloud.io/vault-tls-secret: vault-tls
+        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
+        secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
         alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
     spec:
       initContainers:
@@ -62,8 +62,8 @@ spec:
       labels:
         app.kubernetes.io/name: reloader-test-deployment-no-reload
       annotations:
-        vault.security.banzaicloud.io/vault-addr: "https://vault:8200"
-        vault.security.banzaicloud.io/vault-tls-secret: vault-tls
+        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
+        secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
     spec:
       containers:
         - name: alpine
@@ -98,8 +98,8 @@ spec:
       labels:
         app.kubernetes.io/name: reloader-test-deployment-fixed-versions-no-reload
       annotations:
-        vault.security.banzaicloud.io/vault-addr: "https://vault:8200"
-        vault.security.banzaicloud.io/vault-tls-secret: vault-tls
+        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
+        secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
         alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
     spec:
       containers:
@@ -135,9 +135,9 @@ spec:
       labels:
         app.kubernetes.io/name: reloader-test-deployment-annotated-reload
       annotations:
-        vault.security.banzaicloud.io/vault-addr: "https://vault:8200"
-        vault.security.banzaicloud.io/vault-tls-secret: vault-tls
-        vault.security.banzaicloud.io/vault-env-from-path: "secret/data/accounts/aws"
+        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
+        secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
+        secrets-webhook.security.bank-vaults.io/vault-from-path: "secret/data/accounts/aws"
         alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
     spec:
       containers:
@@ -173,9 +173,10 @@ spec:
       labels:
         app.kubernetes.io/name: reloader-test-deployment-annotated-no-reload
       annotations:
-        vault.security.banzaicloud.io/vault-addr: "https://vault:8200"
-        vault.security.banzaicloud.io/vault-tls-secret: vault-tls
-        vault.security.banzaicloud.io/vault-env-from-path: "secret/data/dockerrepo#1"
+        secrets-webhook.security.bank-vaults.io/provider: "vault"
+        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
+        secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
+        secrets-webhook.security.bank-vaults.io/vault-from-path: "secret/data/dockerrepo#1"
         alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
     spec:
       containers:

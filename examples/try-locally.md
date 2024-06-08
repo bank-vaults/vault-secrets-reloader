@@ -3,7 +3,7 @@
 To gain experience in this tool, and to get familiar with the potential of the Bank-Vaults ecosystem, in this guidle we will:
 
 - start a [kind](https://kind.sigs.k8s.io/) cluster
-- install the [Vault Operator](https://github.com/bank-vaults/vault-operator), [Vault Secrets Webhook](https://github.com/bank-vaults/vault-secrets-webhook) and Vault Secrets Reloader all configured to work together nicely
+- install the [Vault Operator](https://github.com/bank-vaults/vault-operator), [Secrets Webhook](https://github.com/bank-vaults/secrets-webhook) and Vault Secrets Reloader all configured to work together nicely
 - start a Vault instance
 - deploy some workloads
 - try out some scenarios with the Reloader
@@ -18,7 +18,7 @@ Clone the [repo](https://github.com/bank-vaults/vault-secrets-reloader) and `cd`
 # install dependencies
 make deps
 
-# start a kind cluster with Bank-Vaults operator, a Vault instance and Vault Secrets Webhook
+# start a kind cluster with Bank-Vaults operator, a Vault instance and Secrets Webhook
 make up-kind
 
 # build the Vault Secrets Reloader image
@@ -69,7 +69,7 @@ Now that we have the Bank-Vaults ecosystem running in our kind cluster, we can d
 kubectl apply -f e2e/deploy/workloads
 ```
 
-Looking at the manifest of one of the deployments, the only difference from one that is prepared to work with the Bank-Vaults Webhook with all the annotations starting with `vault.security.banzaicloud.io` and the env values starting with `vault:` is the presence of the new `alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation telling the Reloader to collect secrets and reload it if necessary.
+Looking at the manifest of one of the deployments, the only difference from one that is prepared to work with the Bank-Vaults Webhook with all the annotations starting with `secrets-webhook.security.bank-vaults.io` and the env values starting with `vault:` is the presence of the new `alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation telling the Reloader to collect secrets and reload it if necessary.
 
 ```yaml
 apiVersion: apps/v1
@@ -86,8 +86,8 @@ spec:
       labels:
         app.kubernetes.io/name: reloader-test-deployment-to-be-reloaded
       annotations:
-        vault.security.banzaicloud.io/vault-addr: "https://vault:8200"
-        vault.security.banzaicloud.io/vault-tls-secret: vault-tls
+        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
+        secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
         alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
     spec:
       initContainers:
