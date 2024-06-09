@@ -6,7 +6,7 @@ This is a high level overview of how the Reloader plays along with other compone
 
 ![flowchart](./assets/flowchart.png)
 
-1. The `collector` worker periodically collects unversioned secrets from workloads with the `alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation that are in the format for injection by the Webhook.
+1. The `collector` worker periodically collects unversioned secrets from workloads with the `secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"` annotation that are in the format for injection by the Webhook.
 
 2. At its scheduled time, the `reloader` worker checks in Vault if there is a new version of any of the collected secrets since the last sync. If it is the case, it continues to step 3, otherwise the workflow stops.
 

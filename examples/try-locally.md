@@ -69,7 +69,7 @@ Now that we have the Bank-Vaults ecosystem running in our kind cluster, we can d
 kubectl apply -f e2e/deploy/workloads
 ```
 
-Looking at the manifest of one of the deployments, the only difference from one that is prepared to work with the Bank-Vaults Webhook with all the annotations starting with `secrets-webhook.security.bank-vaults.io` and the env values starting with `vault:` is the presence of the new `alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation telling the Reloader to collect secrets and reload it if necessary.
+Looking at the manifest of one of the deployments, the only difference from the one that is prepared to work with the Bank-Vaults Webhook with all the annotations starting with `secrets-webhook.security.bank-vaults.io` and the env values starting with `vault:` is the presence of the new `secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"` annotation telling the Reloader to collect secrets and reload it if necessary.
 
 ```yaml
 apiVersion: apps/v1
@@ -88,7 +88,7 @@ spec:
       annotations:
         secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
         secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
-        alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
+        secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"
     spec:
       initContainers:
         - name: init-ubuntu
@@ -140,10 +140,10 @@ Now everything is set to try some things out with the Reloader:
 
     Also notice that there are two pods with the now changed `MYSQL_PASSWORD` injected into them not being restarted, for the following reasons:
 
-    - the pod `reloader-test-deployment-no-reload-xxx` does not have the `alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation set
+    - the pod `reloader-test-deployment-no-reload-xxx` does not have the `secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"` annotation set
     - the pod `reloader-test-deployment-fixed-versions-no-reload-xxx` - although it does have the annotation - only uses versioned secrets, so they won't be reloaded for the latest version of the secret.
 
-2. Change two secrets used in a workload, observe the previous pod to be recreated again, also that the pod `reloader-test-daemonset-xxx` only restarted once, although it uses both of these secrets. The number a workload got "reloaded" by the Reloader can be checked on the `alpha.vault.security.banzaicloud.io/secret-reload-count` annotation that is used to trigger a new rollout.
+2. Change two secrets used in a workload, observe the previous pod to be recreated again, also that the pod `reloader-test-daemonset-xxx` only restarted once, although it uses both of these secrets. The number a workload got "reloaded" by the Reloader can be checked on the `secrets-reloader.security.bank-vaults.io/secret-reload-count` annotation that is used to trigger a new rollout.
 
     ```bash
     vault kv patch secret/accounts/aws AWS_SECRET_ACCESS_KEY=s3cr3t2

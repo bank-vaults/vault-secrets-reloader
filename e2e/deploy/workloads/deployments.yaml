@@ -14,7 +14,7 @@ spec:
       annotations:
         secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
         secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
-        alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
+        secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"
     spec:
       initContainers:
         - name: init-ubuntu
@@ -100,7 +100,7 @@ spec:
       annotations:
         secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
         secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
-        alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
+        secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"
     spec:
       containers:
         - name: alpine
@@ -138,7 +138,7 @@ spec:
         secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
         secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
         secrets-webhook.security.bank-vaults.io/vault-from-path: "secret/data/accounts/aws"
-        alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
+        secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"
     spec:
       containers:
         - name: alpine
@@ -177,7 +177,7 @@ spec:
         secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
         secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
         secrets-webhook.security.bank-vaults.io/vault-from-path: "secret/data/dockerrepo#1"
-        alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
+        secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"
     spec:
       containers:
         - name: alpine
