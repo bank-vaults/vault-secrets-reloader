@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,8 +31,9 @@ func TestIncrementReloadCountAnnotation(t *testing.T) {
 		expectedValue     string
 	}{
 		{
-			name:              "empty annotation should use new annotation",
+			name:              "no annotation should use the ReloadCountAnnotationName",
 			annotation:        "",
+			annotationValue:   "",
 			expectedAnnoation: ReloadCountAnnotationName,
 			expectedValue:     "1",
 		},
@@ -55,11 +56,14 @@ func TestIncrementReloadCountAnnotation(t *testing.T) {
 	for _, tt := range tests {
 		ttp := tt
 		t.Run(ttp.name, func(t *testing.T) {
-			podTemplateSpec := &v1.PodTemplateSpec{
+			annotations := map[string]string{}
+			if ttp.annotation != "" {
+				annotations[ttp.annotation] = ttp.annotationValue
+			}
+
+			podTemplateSpec := &corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						ttp.annotation: ttp.annotationValue,
-					},
+					Annotations: annotations,
 				},
 			}
 

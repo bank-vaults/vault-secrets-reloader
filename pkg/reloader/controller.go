@@ -160,7 +160,7 @@ func (c *Controller) handleObject(obj interface{}) {
 	}
 
 	// Process workload, skip if reload annotation not present
-	if podTemplateSpec.GetAnnotations()[SecretReloadAnnotationName] != "true" || podTemplateSpec.GetAnnotations()[DeprecatedSecretReloadAnnotationName] != "true" {
+	if shouldProcessWorkload(podTemplateSpec.Annotations) {
 		return
 	}
 	c.logger.Debug(fmt.Sprintf("Processing workload: %#v", workloadData))
@@ -207,9 +207,13 @@ func (c *Controller) handleObjectDelete(obj interface{}) {
 	}
 
 	// Delete workload, skip if reload annotation not present
-	if podTemplateSpec.GetAnnotations()[SecretReloadAnnotationName] != "true" || podTemplateSpec.GetAnnotations()[DeprecatedSecretReloadAnnotationName] != "true" {
+	if shouldProcessWorkload(podTemplateSpec.Annotations) {
 		return
 	}
 	c.logger.Debug(fmt.Sprintf("Deleting workload from store: %#v", workloadData))
 	c.workloadSecrets.Delete(workloadData)
+}
+
+func shouldProcessWorkload(annotations map[string]string) bool {
+	return annotations[SecretReloadAnnotationName] == "true" || annotations[DeprecatedSecretReloadAnnotationName] == "true"
 }
