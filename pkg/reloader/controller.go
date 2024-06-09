@@ -37,8 +37,11 @@ const (
 	DaemonSetKind   = "DaemonSet"
 	StatefulSetKind = "StatefulSet"
 
-	SecretReloadAnnotationName = "alpha.vault.security.banzaicloud.io/reload-on-secret-change"
-	ReloadCountAnnotationName  = "alpha.vault.security.banzaicloud.io/secret-reload-count"
+	SecretReloadAnnotationName = "secrets-reloader.security.bank-vaults.io/reload-on-secret-change"
+	ReloadCountAnnotationName  = "secrets-reloader.security.bank-vaults.io/secret-reload-count"
+
+	DeprecatedSecretReloadAnnotationName = "alpha.vault.security.banzaicloud.io/reload-on-secret-change"
+	DeprecatedReloadCountAnnotationName  = "alpha.vault.security.banzaicloud.io/secret-reload-count"
 )
 
 // Controller is the controller implementation for Foo resources
@@ -157,7 +160,7 @@ func (c *Controller) handleObject(obj interface{}) {
 	}
 
 	// Process workload, skip if reload annotation not present
-	if podTemplateSpec.GetAnnotations()[SecretReloadAnnotationName] != "true" {
+	if podTemplateSpec.GetAnnotations()[SecretReloadAnnotationName] != "true" || podTemplateSpec.GetAnnotations()[DeprecatedSecretReloadAnnotationName] != "true" {
 		return
 	}
 	c.logger.Debug(fmt.Sprintf("Processing workload: %#v", workloadData))
@@ -204,7 +207,7 @@ func (c *Controller) handleObjectDelete(obj interface{}) {
 	}
 
 	// Delete workload, skip if reload annotation not present
-	if podTemplateSpec.GetAnnotations()[SecretReloadAnnotationName] != "true" {
+	if podTemplateSpec.GetAnnotations()[SecretReloadAnnotationName] != "true" || podTemplateSpec.GetAnnotations()[DeprecatedSecretReloadAnnotationName] != "true" {
 		return
 	}
 	c.logger.Debug(fmt.Sprintf("Deleting workload from store: %#v", workloadData))

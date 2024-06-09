@@ -154,14 +154,31 @@ func (c *Controller) reloadWorkload(workload workload) error {
 
 func incrementReloadCountAnnotation(podTemplate *corev1.PodTemplateSpec) {
 	version := "1"
+	annotationName := ReloadCountAnnotationName
 
-	if reloadCount := podTemplate.GetAnnotations()[ReloadCountAnnotationName]; reloadCount != "" {
-		count, err := strconv.Atoi(reloadCount)
-		if err == nil {
+	// If there are no annotations set on the resource,
+	// .GetAnnotations() will return nil so it needs to be
+	// initialized so in that case we can add the annotation
+	annotations := podTemplate.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	reloadCount, ok := annotations[ReloadCountAnnotationName]
+	if !ok {
+		reloadCount, ok = annotations[DeprecatedReloadCountAnnotationName]
+		if ok {
+			annotationName = DeprecatedReloadCountAnnotationName
+		}
+	}
+
+	if reloadCount != "" {
+		if count, err := strconv.Atoi(reloadCount); err == nil {
 			count++
 			version = strconv.Itoa(count)
 		}
 	}
 
-	podTemplate.GetAnnotations()[ReloadCountAnnotationName] = version
+	annotations[annotationName] = version
+	podTemplate.SetAnnotations(annotations)
 }

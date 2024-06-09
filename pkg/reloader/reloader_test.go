@@ -18,19 +18,56 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestIncrementReloadCountAnnotation(t *testing.T) {
-	podTemplate := corev1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{
-			Annotations: map[string]string{},
+	tests := []struct {
+		name              string
+		annotation        string
+		annotationValue   string
+		expectedAnnoation string
+		expectedValue     string
+	}{
+		{
+			name:              "empty annotation should use new annotation",
+			annotation:        "",
+			expectedAnnoation: ReloadCountAnnotationName,
+			expectedValue:     "1",
+		},
+		{
+			name:              "declared annotation should use the same annotation",
+			annotation:        ReloadCountAnnotationName,
+			annotationValue:   "1",
+			expectedAnnoation: ReloadCountAnnotationName,
+			expectedValue:     "2",
+		},
+		{
+			name:              "deprecated annotation should use the same annotation",
+			annotation:        DeprecatedReloadCountAnnotationName,
+			annotationValue:   "1",
+			expectedAnnoation: DeprecatedReloadCountAnnotationName,
+			expectedValue:     "2",
 		},
 	}
 
-	incrementReloadCountAnnotation(&podTemplate)
-	assert.Equal(t, "1", podTemplate.GetAnnotations()[ReloadCountAnnotationName])
-	incrementReloadCountAnnotation(&podTemplate)
-	assert.Equal(t, "2", podTemplate.GetAnnotations()[ReloadCountAnnotationName])
+	for _, tt := range tests {
+		ttp := tt
+		t.Run(ttp.name, func(t *testing.T) {
+			podTemplateSpec := &v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						ttp.annotation: ttp.annotationValue,
+					},
+				},
+			}
+
+			incrementReloadCountAnnotation(podTemplateSpec)
+
+			annotationValue, ok := podTemplateSpec.Annotations[ttp.expectedAnnoation]
+			assert.True(t, ok)
+			assert.Equal(t, ttp.expectedValue, annotationValue)
+		})
+	}
 }
