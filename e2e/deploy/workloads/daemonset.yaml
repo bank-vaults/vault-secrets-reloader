@@ -15,7 +15,6 @@ spec:
         secrets-webhook.security.bank-vaults.io/provider: "vault"
         secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
         secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
-        alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
         secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"
     spec:
       initContainers:

@@ -154,20 +154,8 @@ func (c *Controller) reloadWorkload(workload workload) error {
 
 func incrementReloadCountAnnotation(podTemplate *corev1.PodTemplateSpec) {
 	version := "1"
-	annotationName := ReloadCountAnnotationName
 
-	// check for the current annotation
-	reloadCount, currentExists := podTemplate.GetAnnotations()[ReloadCountAnnotationName]
-	if !currentExists {
-		// check for deprecated annotation
-		if deprecatedReloadCount, deprecatedExists := podTemplate.GetAnnotations()[DeprecatedReloadCountAnnotationName]; deprecatedExists {
-			annotationName = DeprecatedReloadCountAnnotationName
-			reloadCount = deprecatedReloadCount
-		}
-	}
-
-	// parse and increment the reload count
-	if reloadCount != "" {
+	if reloadCount := podTemplate.GetAnnotations()[ReloadCountAnnotationName]; reloadCount != "" {
 		count, err := strconv.Atoi(reloadCount)
 		if err == nil {
 			count++
@@ -175,5 +163,5 @@ func incrementReloadCountAnnotation(podTemplate *corev1.PodTemplateSpec) {
 		}
 	}
 
-	podTemplate.GetAnnotations()[annotationName] = version
+	podTemplate.GetAnnotations()[ReloadCountAnnotationName] = version
 }

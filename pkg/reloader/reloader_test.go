@@ -25,53 +25,40 @@ import (
 func TestIncrementReloadCountAnnotation(t *testing.T) {
 	tests := []struct {
 		name              string
-		annotation        string
-		annotationValue   string
-		expectedAnnoation string
-		expectedValue     string
+		annotations       map[string]string
+		expectedAnnoation map[string]string
 	}{
 		{
-			name:              "no annotation should use the ReloadCountAnnotationName",
-			annotation:        "",
-			annotationValue:   "",
-			expectedAnnoation: ReloadCountAnnotationName,
-			expectedValue:     "1",
+			name:        "no annotation should add annotation",
+			annotations: map[string]string{},
+			expectedAnnoation: map[string]string{
+				ReloadCountAnnotationName: "1",
+			},
 		},
 		{
-			name:              "declared annotation should use the same annotation",
-			annotation:        ReloadCountAnnotationName,
-			annotationValue:   "1",
-			expectedAnnoation: ReloadCountAnnotationName,
-			expectedValue:     "2",
-		},
-		{
-			name:              "deprecated annotation should use the same annotation",
-			annotation:        DeprecatedReloadCountAnnotationName,
-			annotationValue:   "1",
-			expectedAnnoation: DeprecatedReloadCountAnnotationName,
-			expectedValue:     "2",
+			name: "existing annotation should increment annotation",
+			annotations: map[string]string{
+				ReloadCountAnnotationName: "1",
+			},
+			expectedAnnoation: map[string]string{
+				ReloadCountAnnotationName: "2",
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		ttp := tt
 		t.Run(ttp.name, func(t *testing.T) {
-			annotations := map[string]string{}
-			if ttp.annotation != "" {
-				annotations[ttp.annotation] = ttp.annotationValue
-			}
 
 			podTemplateSpec := &corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: annotations,
+					Annotations: ttp.annotations,
 				},
 			}
 
 			incrementReloadCountAnnotation(podTemplateSpec)
 
-			annotationValue, ok := podTemplateSpec.Annotations[ttp.expectedAnnoation]
-			assert.True(t, ok)
-			assert.Equal(t, ttp.expectedValue, annotationValue)
+			assert.Equal(t, ttp.expectedAnnoation, podTemplateSpec.Annotations)
 		})
 	}
 }
