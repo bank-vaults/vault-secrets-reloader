@@ -24,14 +24,14 @@ import (
 
 func TestIncrementReloadCountAnnotation(t *testing.T) {
 	tests := []struct {
-		name              string
-		annotations       map[string]string
-		expectedAnnoation map[string]string
+		name                string
+		annotations         map[string]string
+		expectedAnnotations map[string]string
 	}{
 		{
 			name:        "no annotation should add annotation",
 			annotations: map[string]string{},
-			expectedAnnoation: map[string]string{
+			expectedAnnotations: map[string]string{
 				ReloadCountAnnotationName: "1",
 			},
 		},
@@ -40,7 +40,7 @@ func TestIncrementReloadCountAnnotation(t *testing.T) {
 			annotations: map[string]string{
 				ReloadCountAnnotationName: "1",
 			},
-			expectedAnnoation: map[string]string{
+			expectedAnnotations: map[string]string{
 				ReloadCountAnnotationName: "2",
 			},
 		},
@@ -58,7 +58,7 @@ func TestIncrementReloadCountAnnotation(t *testing.T) {
 
 			incrementReloadCountAnnotation(podTemplateSpec)
 
-			assert.Equal(t, ttp.expectedAnnoation, podTemplateSpec.Annotations)
+			assert.Equal(t, ttp.expectedAnnotations, podTemplateSpec.Annotations)
 		})
 	}
 }

@@ -86,6 +86,7 @@ spec:
       labels:
         app.kubernetes.io/name: reloader-test-deployment-to-be-reloaded
       annotations:
+        secrets-webhook.security.bank-vaults.io/provider: "vault"
         secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
         secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
         secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"
