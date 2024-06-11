@@ -23,14 +23,42 @@ import (
 )
 
 func TestIncrementReloadCountAnnotation(t *testing.T) {
-	podTemplate := corev1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{
-			Annotations: map[string]string{},
+	tests := []struct {
+		name                string
+		annotations         map[string]string
+		expectedAnnotations map[string]string
+	}{
+		{
+			name:        "no annotation should add annotation",
+			annotations: map[string]string{},
+			expectedAnnotations: map[string]string{
+				ReloadCountAnnotationName: "1",
+			},
+		},
+		{
+			name: "existing annotation should increment annotation",
+			annotations: map[string]string{
+				ReloadCountAnnotationName: "1",
+			},
+			expectedAnnotations: map[string]string{
+				ReloadCountAnnotationName: "2",
+			},
 		},
 	}
 
-	incrementReloadCountAnnotation(&podTemplate)
-	assert.Equal(t, "1", podTemplate.GetAnnotations()[ReloadCountAnnotationName])
-	incrementReloadCountAnnotation(&podTemplate)
-	assert.Equal(t, "2", podTemplate.GetAnnotations()[ReloadCountAnnotationName])
+	for _, tt := range tests {
+		ttp := tt
+		t.Run(ttp.name, func(t *testing.T) {
+
+			podTemplateSpec := &corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: ttp.annotations,
+				},
+			}
+
+			incrementReloadCountAnnotation(podTemplateSpec)
+
+			assert.Equal(t, ttp.expectedAnnotations, podTemplateSpec.Annotations)
+		})
+	}
 }

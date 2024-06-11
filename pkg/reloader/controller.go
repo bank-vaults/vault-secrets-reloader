@@ -37,8 +37,8 @@ const (
 	DaemonSetKind   = "DaemonSet"
 	StatefulSetKind = "StatefulSet"
 
-	SecretReloadAnnotationName = "alpha.vault.security.banzaicloud.io/reload-on-secret-change"
-	ReloadCountAnnotationName  = "alpha.vault.security.banzaicloud.io/secret-reload-count"
+	SecretReloadAnnotationName = "secrets-reloader.security.bank-vaults.io/reload-on-secret-change"
+	ReloadCountAnnotationName  = "secrets-reloader.security.bank-vaults.io/secret-reload-count"
 )
 
 // Controller is the controller implementation for Foo resources

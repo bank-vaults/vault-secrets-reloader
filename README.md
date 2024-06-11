@@ -15,9 +15,9 @@ Vault Secrets Reloader can periodically check if a secret that is used in watche
 
 Upon deployment, the Reloader spawns two “workers”, that run periodically at two different time intervals:
 
-1. The `collector` collects and stores information about the workloads that are opted in via the `alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation in their pod template metadata and the Vault secrets they use.
+1. The `collector` collects and stores information about the workloads that are opted in via the `secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"` annotation in their pod template metadata and the Vault secrets they use.
 
-2. The `reloader` iterates on the data collected by the `collector`, polling the configured Vault instance for the current version of the secrets, and if it finds that it differs from the stored one, adds the workloads where the secret is used to a list of workloads that needs reloading. In a following step, it modifies these workloads by incrementing the value of the `alpha.vault.security.banzaicloud.io/secret-reload-count` annotation in their pod template metadata, initiating a new rollout.
+2. The `reloader` iterates on the data collected by the `collector`, polling the configured Vault instance for the current version of the secrets, and if it finds that it differs from the stored one, adds the workloads where the secret is used to a list of workloads that needs reloading. In a following step, it modifies these workloads by incrementing the value of the `secrets-reloader.security.bank-vaults.io/secret-reload-count` annotation in their pod template metadata, initiating a new rollout.
 
 To get familiarized, check out [how Reloader fits in the Bank-Vaults ecosystem](https://github.com/bank-vaults/vault-secrets-reloader/blob/main/examples/reloader-in-bank-vaults-ecosystem.md), and how can you [give Reloader a spin](https://github.com/bank-vaults/vault-secrets-reloader/blob/main/examples/try-locally.md) on your local machine.
 
@@ -29,7 +29,7 @@ To get familiarized, check out [how Reloader fits in the Bank-Vaults ecosystem](
 
 - It can only check for updated versions of secrets in one specific instance of Hashicorp Vault, no other secret stores are supported yet.
 
-- It can only “reload” Deployments, DaemonSets and StatefulSets that have the `alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"` annotation set among their `spec.template.metadata.annotations`.
+- It can only “reload” Deployments, DaemonSets and StatefulSets that have the `secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"` annotation set among their `spec.template.metadata.annotations`.
 
 - The `collector` can only look for secrets in the workload’s pod template environment variables directly, and in their `secrets-webhook.security.bank-vaults.io/vault-from-path` annotation, in the format the `secrets-webhook` also uses, and are unversioned.
 

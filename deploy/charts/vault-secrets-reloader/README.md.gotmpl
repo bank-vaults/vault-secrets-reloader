@@ -11,7 +11,7 @@ Reloader works in conjunction with the [Secrets Webhook](https://github.com/bank
 You will need to add the following annotations to the pod template spec of the workloads (i.e. Deployments, DaemonSets and StatefulSets) that you wish to reload:
 
 ```yaml
-alpha.vault.security.banzaicloud.io/reload-on-secret-change: "true"
+secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"
 ```
 
 ## Installing the Chart
