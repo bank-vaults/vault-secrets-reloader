@@ -57,18 +57,18 @@ lint: lint-go lint-helm lint-yaml lint-docker ## Run lint checks
 
 .PHONY: test
 test: ## Run tests
-		go clean -testcache
-		go test -race -v ./pkg/reloader
+	go clean -testcache
+	go test -race -v ./...
 
 .PHONY: test-e2e
 test-e2e: ## Run acceptance tests. If running on a local kind cluster, run "make import-test" before this
-		go clean -testcache
-		go test -race -v -timeout 900s -tags e2e ./e2e
+	go clean -testcache
+	go test -race -v -timeout 900s -tags e2e ./e2e
 
 .PHONY: test-e2e-local
 test-e2e-local: container-image ## Run e2e tests locally
-		go clean -testcache
-		LOAD_IMAGE=${IMG} RELOADER_VERSION=dev OPERATOR_VERSION=$(OPERATOR_VERSION) WEBHOOK_VERSION=$(WEBHOOK_VERSION) LOG_VERBOSE=true ${MAKE} test-e2e
+	go clean -testcache
+	LOAD_IMAGE=${IMG} RELOADER_VERSION=dev OPERATOR_VERSION=$(OPERATOR_VERSION) WEBHOOK_VERSION=$(WEBHOOK_VERSION) LOG_VERBOSE=true ${MAKE} test-e2e
 
 ##@ Development
 
