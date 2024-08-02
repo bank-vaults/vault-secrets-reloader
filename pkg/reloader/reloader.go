@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"sync"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,55 +44,53 @@ func (c *Controller) runReloader(ctx context.Context) { //nolint:revive
 	// with the one stored in the secretVersions map, while creating a new secretVersions map
 	workloadsToReload := make(map[workload]bool)
 	newSecretVersions := make(map[string]int)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 	for secretPath, workloads := range c.workloadSecrets.GetSecretWorkloadsMap() {
-		reloaderLogger.Debug(fmt.Sprintf("Checking secret: %s", secretPath))
-		// Get current secret version
-		currentVersion, err := getSecretVersionFromVault(c.vaultClient.Logical(), secretPath)
-		if err != nil {
-			switch err.(type) {
-			case ErrSecretNotFound:
-				if !c.vaultConfig.IgnoreMissingSecrets {
-					reloaderLogger.Error(err.Error())
-				}
-				if c.vaultConfig.IgnoreMissingSecrets {
-					reloaderLogger.Warn(fmt.Sprintf(
-						"Path not found: %s - We couldn't find a secret path. This is not an error since missing secrets can be ignored according to the configuration you've set (env: VAULT_IGNORE_MISSING_SECRETS).",
-						secretPath,
-					))
-				}
-				continue
+		wg.Add(1)
+		go func(secretPath string, workloads []workload) {
+			defer wg.Done()
+			reloaderLogger.Debug(fmt.Sprintf("Checking secret: %s", secretPath))
 
-			default:
-				reloaderLogger.Error(fmt.Errorf("failed to get secret version: %w", err).Error())
-				continue
+			// Get current secret version
+			currentVersion, err := getSecretVersionFromVault(c.vaultClient.Logical(), secretPath)
+			if err != nil {
+				c.handleSecretError(err, secretPath, reloaderLogger)
+				return
 			}
-		}
 
-		// Compare current version with the secretVersions map
-		if c.secretVersions[secretPath] == 0 {
-			reloaderLogger.Debug(fmt.Sprintf("Secret %s not found in secretVersions map, creating it", secretPath))
+			mu.Lock()
+			defer mu.Unlock()
+
+			// Compare secret versions
+			switch c.secretVersions[secretPath] {
+			case 0:
+				reloaderLogger.Debug(fmt.Sprintf("Secret %s not found in secretVersions map, creating it", secretPath))
+			case currentVersion:
+				reloaderLogger.Debug(fmt.Sprintf("Secret %s did not change", secretPath))
+			default:
+				reloaderLogger.Debug(fmt.Sprintf("Secret version stored: %d current: %d", c.secretVersions[secretPath], currentVersion))
+				for _, workload := range workloads {
+					workloadsToReload[workload] = true
+				}
+			}
+
 			newSecretVersions[secretPath] = currentVersion
-			continue
-		}
-		if c.secretVersions[secretPath] == currentVersion {
-			reloaderLogger.Debug(fmt.Sprintf("Secret %s did not change", secretPath))
-			newSecretVersions[secretPath] = currentVersion
-			continue
-		}
-		reloaderLogger.Debug(fmt.Sprintf("Secret version stored: %d current: %d", c.secretVersions[secretPath], currentVersion))
-		for _, workload := range workloads {
-			workloadsToReload[workload] = true
-		}
-		newSecretVersions[secretPath] = currentVersion
+		}(secretPath, workloads)
 	}
+	wg.Wait()
 
 	// Reloading workloads
-	for workload := range workloadsToReload {
-		reloaderLogger.Info(fmt.Sprintf("Reloading workload: %s", workload))
-		err := c.reloadWorkload(workload)
-		if err != nil {
-			reloaderLogger.Error(fmt.Errorf("failed reloading workload: %s: %w", workload, err).Error())
-		}
+	for workloadToReload := range workloadsToReload {
+		go func(workloadToReload workload) {
+			defer wg.Done()
+			reloaderLogger.Info(fmt.Sprintf("Reloading workload: %s", workloadToReload))
+
+			err := c.reloadWorkload(workloadToReload)
+			if err != nil {
+				reloaderLogger.Error(fmt.Errorf("failed reloading workload: %s: %w", workloadToReload, err).Error())
+			}
+		}(workloadToReload)
 	}
 
 	// Replace secretVersions map with the new one so we don't keep deleted secrets in the map
@@ -150,6 +149,23 @@ func (c *Controller) reloadWorkload(workload workload) error {
 	}
 
 	return nil
+}
+
+func (c *Controller) handleSecretError(err error, secretPath string, logger *slog.Logger) {
+	switch err.(type) {
+	case ErrSecretNotFound:
+		if !c.vaultConfig.IgnoreMissingSecrets {
+			logger.Error(err.Error())
+		} else {
+			logger.Warn(fmt.Sprintf(
+				"Path not found: %s - We couldn't find a secret path. This is not an error since missing secrets can be ignored according to the configuration you've set (env: VAULT_IGNORE_MISSING_SECRETS).",
+				secretPath,
+			))
+		}
+
+	default:
+		logger.Error(fmt.Errorf("failed to get secret version: %w", err).Error())
+	}
 }
 
 func incrementReloadCountAnnotation(podTemplate *corev1.PodTemplateSpec) {
