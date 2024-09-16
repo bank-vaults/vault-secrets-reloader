@@ -5,7 +5,7 @@ go 1.22.3
 require (
 	github.com/bank-vaults/vault-operator v1.22.2
 	github.com/bank-vaults/vault-sdk v0.9.4
-	github.com/hashicorp/vault/api v1.14.0
+	github.com/hashicorp/vault/api v1.15.0
 	github.com/samber/slog-multi v1.2.1
 	github.com/stretchr/testify v1.9.0
 	k8s.io/api v0.31.1
@@ -18,6 +18,7 @@ require (
 )
 
 require (
+	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 )
@@ -33,7 +34,6 @@ require (
 	github.com/bank-vaults/secrets-webhook v0.1.0
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
-	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
