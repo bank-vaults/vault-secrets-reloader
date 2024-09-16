@@ -21,7 +21,7 @@
           default = {
             languages = {
               go.enable = true;
-              go.package = pkgs.go_1_21;
+              go.package = pkgs.go_1_23;
             };
 
             services = {
@@ -35,23 +35,10 @@
               nixpkgs-fmt.enable = true;
               yamllint.enable = true;
               hadolint.enable = true;
-              helm-docs = {
-                enable = true;
-                name = "helm-docs";
-                description = "Uses 'helm-docs' to create documentation from the Helm chart's 'values.yaml' file, and inserts the result into a corresponding 'README.md' file.";
-                files = "";
-                entry = "${pkgs.helm-docs}/bin/helm-docs";
-              };
             };
 
             packages = with pkgs; [
               gnumake
-
-              # golangci-lint
-              # TODO: remove once https://github.com/NixOS/nixpkgs/pull/254878 hits unstable
-              (golangci-lint.override (prev: {
-                buildGoModule = pkgs.buildGo121Module;
-              }))
 
               kind
               kubectl
@@ -63,6 +50,7 @@
 
               crc
 
+              golangci-lint
               yamllint
               hadolint
             ] ++ [

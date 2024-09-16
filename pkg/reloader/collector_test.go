@@ -63,7 +63,8 @@ func TestWorkloadSecretsStore(t *testing.T) {
 		// check workload secret deleting
 		store.Delete(workload1)
 		assert.Equal(t, map[workload][]string{
-			workload2: {"secret/data/accounts/aws", "secret/data/docker"}}, store.GetWorkloadSecretsMap())
+			workload2: {"secret/data/accounts/aws", "secret/data/docker"},
+		}, store.GetWorkloadSecretsMap())
 	})
 }
 

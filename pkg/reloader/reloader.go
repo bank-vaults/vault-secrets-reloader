@@ -25,7 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (c *Controller) runReloader(ctx context.Context) { //nolint:revive
+func (c *Controller) runReloader(ctx context.Context) {
 	reloaderLogger := c.logger.With(slog.String("worker", "reloader"))
 	reloaderLogger.Info("Reloader started")
 
@@ -86,7 +86,7 @@ func (c *Controller) runReloader(ctx context.Context) { //nolint:revive
 			defer wg.Done()
 			reloaderLogger.Info(fmt.Sprintf("Reloading workload: %s", workloadToReload))
 
-			err := c.reloadWorkload(workloadToReload)
+			err := c.reloadWorkload(ctx, workloadToReload)
 			if err != nil {
 				reloaderLogger.Error(fmt.Errorf("failed reloading workload: %s: %w", workloadToReload, err).Error())
 			}
@@ -102,44 +102,44 @@ func (c *Controller) runReloader(ctx context.Context) { //nolint:revive
 	}
 }
 
-func (c *Controller) reloadWorkload(workload workload) error {
+func (c *Controller) reloadWorkload(ctx context.Context, workload workload) error {
 	// Reload object based on its type
 	switch workload.kind {
 	case DeploymentKind:
-		deployment, err := c.kubeClient.AppsV1().Deployments(workload.namespace).Get(context.Background(), workload.name, metav1.GetOptions{})
+		deployment, err := c.kubeClient.AppsV1().Deployments(workload.namespace).Get(ctx, workload.name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 
 		incrementReloadCountAnnotation(&deployment.Spec.Template)
 
-		_, err = c.kubeClient.AppsV1().Deployments(workload.namespace).Update(context.Background(), deployment, metav1.UpdateOptions{})
+		_, err = c.kubeClient.AppsV1().Deployments(workload.namespace).Update(ctx, deployment, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
 
 	case DaemonSetKind:
-		daemonSet, err := c.kubeClient.AppsV1().DaemonSets(workload.namespace).Get(context.Background(), workload.name, metav1.GetOptions{})
+		daemonSet, err := c.kubeClient.AppsV1().DaemonSets(workload.namespace).Get(ctx, workload.name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 
 		incrementReloadCountAnnotation(&daemonSet.Spec.Template)
 
-		_, err = c.kubeClient.AppsV1().DaemonSets(workload.namespace).Update(context.Background(), daemonSet, metav1.UpdateOptions{})
+		_, err = c.kubeClient.AppsV1().DaemonSets(workload.namespace).Update(ctx, daemonSet, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
 
 	case StatefulSetKind:
-		statefulSet, err := c.kubeClient.AppsV1().StatefulSets(workload.namespace).Get(context.Background(), workload.name, metav1.GetOptions{})
+		statefulSet, err := c.kubeClient.AppsV1().StatefulSets(workload.namespace).Get(ctx, workload.name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 
 		incrementReloadCountAnnotation(&statefulSet.Spec.Template)
 
-		_, err = c.kubeClient.AppsV1().StatefulSets(workload.namespace).Update(context.Background(), statefulSet, metav1.UpdateOptions{})
+		_, err = c.kubeClient.AppsV1().StatefulSets(workload.namespace).Update(ctx, statefulSet, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
