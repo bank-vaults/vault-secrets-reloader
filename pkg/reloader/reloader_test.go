@@ -49,7 +49,6 @@ func TestIncrementReloadCountAnnotation(t *testing.T) {
 	for _, tt := range tests {
 		ttp := tt
 		t.Run(ttp.name, func(t *testing.T) {
-
 			podTemplateSpec := &corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: ttp.annotations,

@@ -129,13 +129,13 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 # -- Node labels for pod assignment.
-# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector
+# Check: <https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector>
 nodeSelector: {}
 
 # -- List of node tolerations for the pods.
-# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+# Check: <https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>
 tolerations: []
 
 # -- Node affinity settings for the pods.
-# Check: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+# Check: <https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/>
 affinity: {}
