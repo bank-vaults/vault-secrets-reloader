@@ -4,7 +4,7 @@ go 1.23.1
 
 require (
 	github.com/bank-vaults/secrets-webhook v0.2.0
-	github.com/bank-vaults/vault-operator v1.22.2
+	github.com/bank-vaults/vault-operator v1.22.3
 	github.com/bank-vaults/vault-sdk v0.10.1
 	github.com/hashicorp/vault/api v1.15.0
 	github.com/samber/slog-multi v1.2.2
