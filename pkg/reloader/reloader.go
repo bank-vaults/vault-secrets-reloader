@@ -78,10 +78,13 @@ func (c *Controller) runReloader(ctx context.Context) {
 			newSecretVersions[secretPath] = currentVersion
 		}(secretPath, workloads)
 	}
+	// wait for secret version checking to complete
 	wg.Wait()
 
 	// Reloading workloads
+	wg = sync.WaitGroup{} // Reset the WaitGroup
 	for workloadToReload := range workloadsToReload {
+		wg.Add(1)
 		go func(workloadToReload workload) {
 			defer wg.Done()
 			reloaderLogger.Info(fmt.Sprintf("Reloading workload: %s", workloadToReload))
@@ -92,6 +95,8 @@ func (c *Controller) runReloader(ctx context.Context) {
 			}
 		}(workloadToReload)
 	}
+	// wait for workload reloading to complete
+	wg.Wait()
 
 	// Replace secretVersions map with the new one so we don't keep deleted secrets in the map
 	c.secretVersions = newSecretVersions
