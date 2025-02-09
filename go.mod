@@ -7,7 +7,7 @@ require (
 	github.com/bank-vaults/vault-operator v1.22.5
 	github.com/bank-vaults/vault-sdk v0.10.2
 	github.com/hashicorp/vault/api v1.15.0
-	github.com/samber/slog-multi v1.3.3
+	github.com/samber/slog-multi v1.4.0
 	github.com/stretchr/testify v1.10.0
 	k8s.io/api v0.32.1
 	k8s.io/apiextensions-apiserver v0.32.1
@@ -100,7 +100,7 @@ require (
 	github.com/sagikazarmark/docker-ref v0.2.0 // indirect
 	github.com/sagikazarmark/locafero v0.6.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
-	github.com/samber/lo v1.47.0 // indirect
+	github.com/samber/lo v1.49.1 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
