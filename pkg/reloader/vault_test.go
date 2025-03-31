@@ -26,7 +26,9 @@ import (
 
 func TestGetVaultConfigFromEnv(t *testing.T) {
 	t.Run("default config", func(t *testing.T) {
-		os.Unsetenv("VAULT_ADDR")
+		if err := os.Unsetenv("VAULT_ADDR"); err != nil {
+			t.Fatalf("failed to unset VAULT_ADDR: %v", err)
+		}
 		defaults := VaultConfig{
 			Addr:                 "https://vault:8200",
 			AuthMethod:           "jwt",
@@ -45,17 +47,36 @@ func TestGetVaultConfigFromEnv(t *testing.T) {
 	})
 
 	t.Run("custom config", func(t *testing.T) {
-		os.Setenv("VAULT_ADDR", "http://127.0.0.1:8200")
-		os.Setenv("VAULT_AUTH_METHOD", "kubernetes")
-		os.Setenv("VAULT_ROLE", "test")
-		os.Setenv("VAULT_PATH", "test")
-		os.Setenv("VAULT_NAMESPACE", "test")
-		os.Setenv("VAULT_SKIP_VERIFY", "true")
-		os.Setenv("VAULT_TLS_SECRET", "test")
-		os.Setenv("VAULT_TLS_SECRET_NS", "test")
-		os.Setenv("VAULT_CLIENT_TIMEOUT", "1m")
-		os.Setenv("VAULT_IGNORE_MISSING_SECRETS", "true")
-
+		if err := os.Setenv("VAULT_ADDR", "http://127.0.0.1:8200"); err != nil {
+			t.Fatalf("failed to set VAULT_ADDR: %v", err)
+		}
+		if err := os.Setenv("VAULT_AUTH_METHOD", "kubernetes"); err != nil {
+			t.Fatalf("failed to set VAULT_AUTH_METHOD: %v", err)
+		}
+		if err := os.Setenv("VAULT_ROLE", "test"); err != nil {
+			t.Fatalf("failed to set VAULT_ROLE: %v", err)
+		}
+		if err := os.Setenv("VAULT_PATH", "test"); err != nil {
+			t.Fatalf("failed to set VAULT_PATH: %v", err)
+		}
+		if err := os.Setenv("VAULT_NAMESPACE", "test"); err != nil {
+			t.Fatalf("failed to set VAULT_NAMESPACE: %v", err)
+		}
+		if err := os.Setenv("VAULT_SKIP_VERIFY", "true"); err != nil {
+			t.Fatalf("failed to set VAULT_SKIP_VERIFY: %v", err)
+		}
+		if err := os.Setenv("VAULT_TLS_SECRET", "test"); err != nil {
+			t.Fatalf("failed to set VAULT_TLS_SECRET: %v", err)
+		}
+		if err := os.Setenv("VAULT_TLS_SECRET_NS", "test"); err != nil {
+			t.Fatalf("failed to set VAULT_TLS_SECRET_NS: %v", err)
+		}
+		if err := os.Setenv("VAULT_CLIENT_TIMEOUT", "1m"); err != nil {
+			t.Fatalf("failed to set VAULT_CLIENT_TIMEOUT: %v", err)
+		}
+		if err := os.Setenv("VAULT_IGNORE_MISSING_SECRETS", "true"); err != nil {
+			t.Fatalf("failed to set VAULT_IGNORE_MISSING_SECRETS: %v", err)
+		}
 		defaults := VaultConfig{
 			Addr:                 "http://127.0.0.1:8200",
 			AuthMethod:           "kubernetes",

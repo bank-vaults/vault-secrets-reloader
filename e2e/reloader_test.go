@@ -237,7 +237,8 @@ func workloadsAvailable(cfg *envconf.Config) error {
 	for _, err := range errors {
 		errorStrings = append(errorStrings, err.Error())
 	}
-	return fmt.Errorf(strings.Join(errorStrings, ", "))
+
+	return fmt.Errorf("%s", strings.Join(errorStrings, ", "))
 }
 
 func getVaultPatch() string {

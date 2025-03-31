@@ -105,7 +105,7 @@ lint: lint-go lint-helm lint-docker lint-yaml ## Run lint checks
 
 .PHONY: lint-go
 lint-go: # Run golang lint check
-	$(GOLANGCI_LINT_BIN) run $(if ${CI},--out-format colored-line-number,)
+	$(GOLANGCI_LINT_BIN) run
 
 .PHONY: lint-helm
 lint-helm: # Run helm lint check
