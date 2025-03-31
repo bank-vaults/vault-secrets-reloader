@@ -1,6 +1,6 @@
 module github.com/bank-vaults/vault-secrets-reloader
 
-go 1.23.1
+go 1.24.1
 
 require (
 	github.com/bank-vaults/secrets-webhook v0.2.2
@@ -14,7 +14,7 @@ require (
 	k8s.io/apimachinery v0.32.3
 	k8s.io/client-go v0.32.3
 	k8s.io/klog/v2 v2.130.1
-	sigs.k8s.io/controller-runtime v0.20.3
+	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/e2e-framework v0.6.0
 )
 
