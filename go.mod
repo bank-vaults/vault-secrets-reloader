@@ -6,7 +6,7 @@ require (
 	github.com/bank-vaults/secrets-webhook v0.2.2
 	github.com/bank-vaults/vault-operator v1.22.5
 	github.com/bank-vaults/vault-sdk v0.10.2
-	github.com/hashicorp/vault/api v1.16.0
+	github.com/hashicorp/vault/api v1.20.0
 	github.com/samber/slog-multi v1.4.0
 	github.com/stretchr/testify v1.10.0
 	k8s.io/api v0.33.1
