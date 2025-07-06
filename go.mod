@@ -4,7 +4,7 @@ go 1.24.1
 
 require (
 	github.com/bank-vaults/secrets-webhook v0.2.2
-	github.com/bank-vaults/vault-operator v1.22.6
+	github.com/bank-vaults/vault-operator v1.23.0
 	github.com/bank-vaults/vault-sdk v0.11.1
 	github.com/hashicorp/vault/api v1.20.0
 	github.com/samber/slog-multi v1.4.1
@@ -89,9 +89,9 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.22.0 // indirect
-	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.62.0 // indirect
-	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/prometheus/client_model v0.6.2 // indirect
+	github.com/prometheus/common v0.65.0 // indirect
+	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sagikazarmark/docker-ref v0.2.0 // indirect
 	github.com/sagikazarmark/locafero v0.9.0 // indirect
@@ -123,7 +123,7 @@ require (
 	golang.org/x/text v0.26.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.34.0 // indirect
-	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
+	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	google.golang.org/api v0.240.0 // indirect
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822 // indirect
