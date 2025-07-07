@@ -3,7 +3,7 @@ module github.com/bank-vaults/vault-secrets-reloader
 go 1.24.1
 
 require (
-	github.com/bank-vaults/secrets-webhook v0.2.2
+	github.com/bank-vaults/secrets-webhook v0.3.0
 	github.com/bank-vaults/vault-operator v1.23.0
 	github.com/bank-vaults/vault-sdk v0.11.1
 	github.com/hashicorp/vault/api v1.20.0
