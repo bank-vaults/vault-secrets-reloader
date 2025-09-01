@@ -8,7 +8,7 @@ require (
 	github.com/bank-vaults/vault-sdk v0.11.1
 	github.com/hashicorp/vault/api v1.20.0
 	github.com/samber/slog-multi v1.4.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	k8s.io/api v0.33.4
 	k8s.io/apiextensions-apiserver v0.33.4
 	k8s.io/apimachinery v0.33.4
