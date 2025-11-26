@@ -123,6 +123,10 @@ lint-yaml:
 fmt: ## Run go fmt against code
 	$(GOLANGCI_LINT_BIN) run --fix
 
+.PHONY: license-cache
+license-cache: ## Populate license cache
+	$(LICENSEI_BIN) cache
+
 .PHONY: license-check
 license-check: ## Run license check
 	$(LICENSEI_BIN) check

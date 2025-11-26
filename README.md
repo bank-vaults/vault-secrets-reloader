@@ -62,11 +62,8 @@ file](https://github.com/bank-vaults/vault-secrets-reloader/blob/main/e2e/deploy
 
 ## Development
 
-**For an optimal developer experience, it is recommended to install [Nix](https://nixos.org/download.html) and
-[direnv](https://direnv.net/docs/installation.html).**
-
-_Alternatively, install [Go](https://go.dev/dl/) on your computer then run `make deps` to install the rest of the
-dependencies._
+Install [Go](https://go.dev/dl/) on your computer then run `make deps` to install the rest of the
+dependencies.
 
 Make sure Docker is installed with Compose and Buildx.
 
