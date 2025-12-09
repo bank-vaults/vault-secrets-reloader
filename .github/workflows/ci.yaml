@@ -183,9 +183,9 @@ jobs:
     needs: [artifacts]
     strategy:
       matrix:
-        k8s_version: ["v1.28.9", "v1.29.4", "v1.30.0"]
-        operator_version: ["v1.22.3", "v1.22.4", "v1.23.0"] # First version that works with the generic webhook: v1.22.1
-        webhook_version: ["v0.2.0", "v0.2.1", "v0.3.0"]
+        k8s_version: ["v1.32.0", "v1.33.0", "v1.34.0"]
+        operator_version: ["v1.22.4", "v1.23.0", "v1.23.1"] # First version that works with the generic webhook: v1.22.1
+        webhook_version: ["v0.2.1", "v0.3.0", "v0.3.1"]
 
     steps:
       - name: Checkout repository
