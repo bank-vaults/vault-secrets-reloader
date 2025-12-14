@@ -17,8 +17,8 @@ github.com/aws/aws-sdk-go v1.55.8 h1:JRmEUbU52aJQZ2AjX4q4Wu7t4uZjOu71uyNmaWlUkJQ
 github.com/aws/aws-sdk-go v1.55.8/go.mod h1:ZkViS9AqA6otK+JBBNH2++sx1sgxrPKcSzPPvQkUtXk=
 github.com/bank-vaults/secrets-webhook v0.3.1 h1:KrvsKRXuEeZZCdkZ3it3J1odBosMJP1D6UHN7bEpHmc=
 github.com/bank-vaults/secrets-webhook v0.3.1/go.mod h1:GHb/5819XqP+c9SX9thIuH5RyqE46mNxxPnq2cdcX+o=
-github.com/bank-vaults/vault-operator v1.23.1 h1:Pd8teBKEc4oBj2NJwUhH4D4/ZECawG0t2e0U9f4mzcI=
-github.com/bank-vaults/vault-operator v1.23.1/go.mod h1:Feda7CFOw/3v2eyJKzwjgcy6cp94O17OtVkXuWRvIE4=
+github.com/bank-vaults/vault-operator v1.23.4 h1:Nns/XgVzrCEwniVSCRZmqYUaw7m4hB3sMGcovqiAD5k=
+github.com/bank-vaults/vault-operator v1.23.4/go.mod h1:NZn9uCBasON0UwxBvUmcO+KQafhSU0ooKob2+mZqIj4=
 github.com/bank-vaults/vault-sdk v0.11.2 h1:rU1XrVQllDZ+NoIVZxHtW5FyGi2wyNpmNqDZ77lxtjk=
 github.com/bank-vaults/vault-sdk v0.11.2/go.mod h1:wTpWwY8y8IxGrs5bgcidWudz4mT/XX7cjI1jSuEeAwc=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
