@@ -7,7 +7,7 @@ require (
 	github.com/bank-vaults/vault-operator v1.23.4
 	github.com/bank-vaults/vault-sdk v0.11.2
 	github.com/hashicorp/vault/api v1.22.0
-	github.com/samber/slog-multi v1.6.0
+	github.com/samber/slog-multi v1.7.0
 	github.com/stretchr/testify v1.11.1
 	k8s.io/api v0.35.0
 	k8s.io/apiextensions-apiserver v0.35.0
