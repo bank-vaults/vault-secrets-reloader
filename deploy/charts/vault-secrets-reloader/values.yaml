@@ -91,6 +91,7 @@ env: {}
   # VAULT_ROLE: "reloader"
   # VAULT_ADDR: "https://vault.default.svc.cluster.local:8200"
   # VAULT_NAMESPACE: "default"
+  # POD_NAMESPACE is injected automatically via Downward API.
   # VAULT_TLS_SECRET: "vault-tls"
   # VAULT_TLS_SECRET_NS: "bank-vaults-infra"
   # VAULT_SKIP_VERIFY: "false"
