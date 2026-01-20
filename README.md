@@ -1,7 +1,7 @@
 # Vault Secrets Reloader
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/bank-vaults/vault-secrets-reloader)](https://goreportcard.com/report/github.com/bank-vaults/vault-secrets-reloader)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bank-vaults/vault-secrets-reloader/ci.yaml?branch=main&style=flat-square)](https://github.com/bank-vaults/vault-secrets-reloader/actions/workflows/ci.yaml?query=workflow%3ACI)
+[![Go Report Card](https://goreportcard.com/badge/github.com/DaveAlmR/vault-secrets-reloader-namespaced)](https://goreportcard.com/report/github.com/DaveAlmR/vault-secrets-reloader-namespaced)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/DaveAlmR/vault-secrets-reloader-namespaced/ci.yaml?branch=main&style=flat-square)](https://github.com/DaveAlmR/vault-secrets-reloader-namespaced/actions/workflows/ci.yaml?query=workflow%3ACI)
 
 Vault Secrets Reloader can periodically check if a secret that is used in watched workloads has a new version in Hashicorp Vault, and if so, automatically “reloads” them by incrementing an annotation value, initiating a rollout for the workload’s pods. This controller is essentially a complementary to `secrets-webhook`, relying on it for actually injecting secrets into the pods of the affected workloads.
 
