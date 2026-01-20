@@ -50,6 +50,10 @@ spec:
           env:
             - name: LISTEN_ADDRESS
               value: ":{{ .Values.service.internalPort }}"
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             {{- range $key, $value := .Values.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}

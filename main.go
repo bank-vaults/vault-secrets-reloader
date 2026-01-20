@@ -129,7 +129,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, *collectorSyncPeriod)
+	podNamespace := os.Getenv("POD_NAMESPACE")
+	if podNamespace == "" {
+		logger.Error("POD_NAMESPACE environment variable must be set")
+		os.Exit(1)
+	}
+
+	kubeInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(
+		kubeClient,
+		*collectorSyncPeriod,
+		kubeinformers.WithNamespace(podNamespace),
+	)
 
 	controller := reloader.NewController(
 		logger,

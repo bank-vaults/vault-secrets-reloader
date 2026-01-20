@@ -43,6 +43,9 @@ the Helm chart (you can check the list of environmental variables accepted for c
 data collection and reloading periods (using Go Duration format) that work best for your requirements and use-cases. For
 example:
 
+The chart also injects `POD_NAMESPACE` using the Downward API so the controller only watches workloads in its own
+namespace. The controller logs an error and exits if `POD_NAMESPACE` is not set.
+
 ```shell
 helm upgrade --install vault-secrets-reloader oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-reloader \
     --set collectorSyncPeriod=2h \
