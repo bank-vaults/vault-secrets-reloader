@@ -9,9 +9,9 @@ SHELL = /usr/bin/env bash -o pipefail
 
 # Default values for environment variables used in the Makefile
 KUBECONFIG ?= $(HOME)/.kube/config
-TEST_KIND_CLUSTER ?= vault-secrets-reloader
+TEST_KIND_CLUSTER ?= vault-secrets-reloader-namespaced
 # Target image name
-CONTAINER_IMAGE_REF = ghcr.io/bank-vaults/vault-secrets-reloader:dev
+CONTAINER_IMAGE_REF = ghcr.io/bank-vaults/vault-secrets-reloader-namespaced:dev
 
 # Operator and Webhook image name
 OPERATOR_VERSION ?= latest
@@ -66,7 +66,7 @@ run: ## Run manager from your host
 .PHONY: build
 build: ## Build manager binary
 	@mkdir -p build
-	go build -race -o build/vault-secrets-reloader .
+	go build -race -o build/vault-secrets-reloader-namespaced .
 
 .PHONY: artifacts
 artifacts: container-image helm-chart ## Build artifacts
@@ -78,7 +78,7 @@ container-image: ## Build docker image
 .PHONY: helm-chart
 helm-chart: ## Build Helm chart
 	@mkdir -p build
-	helm package -d build/ deploy/charts/vault-secrets-reloader
+	helm package -d build/ deploy/charts/vault-secrets-reloader-namespaced
 
 ##@ Checks
 
@@ -109,7 +109,7 @@ lint-go: # Run golang lint check
 
 .PHONY: lint-helm
 lint-helm: # Run helm lint check
-	$(HELM_BIN) lint deploy/charts/vault-secrets-reloader
+	$(HELM_BIN) lint deploy/charts/vault-secrets-reloader-namespaced
 
 .PHONY: lint-docker
 lint-docker: # Run Dockerfile lint check
@@ -153,7 +153,7 @@ upload-kind:
 .PHONY: deploy
 deploy: ## Deploy Reloader controller resources to the K8s cluster
 	kubectl create namespace bank-vaults-infra --dry-run=client -o yaml | kubectl apply -f -
-	$(HELM_BIN) upgrade --install vault-secrets-reloader deploy/charts/vault-secrets-reloader \
+	$(HELM_BIN) upgrade --install vault-secrets-reloader-namespaced deploy/charts/vault-secrets-reloader-namespaced \
 		--set image.tag=dev \
 		--set collectorSyncPeriod=30s \
 		--set reloaderRunPeriod=1m \
@@ -165,7 +165,7 @@ deploy: ## Deploy Reloader controller resources to the K8s cluster
 
 .PHONY: undeploy
 undeploy: ## Clean manager resources from the K8s cluster.
-	$(HELM_BIN) uninstall vault-secrets-reloader --namespace bank-vaults-infra
+	$(HELM_BIN) uninstall vault-secrets-reloader-namespaced --namespace bank-vaults-infra
 
 ##@ Dependencies
 
