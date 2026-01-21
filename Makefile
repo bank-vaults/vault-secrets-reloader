@@ -11,7 +11,7 @@ SHELL = /usr/bin/env bash -o pipefail
 KUBECONFIG ?= $(HOME)/.kube/config
 TEST_KIND_CLUSTER ?= vault-secrets-reloader-namespaced
 # Target image name
-CONTAINER_IMAGE_REF = ghcr.io/bank-vaults/vault-secrets-reloader-namespaced:dev
+CONTAINER_IMAGE_REF = ghcr.io/davealmr/vault-secrets-reloader-namespaced:dev
 
 # Operator and Webhook image name
 OPERATOR_VERSION ?= latest
