@@ -27,7 +27,7 @@ import (
 
 	vaultV1alpha1 "github.com/bank-vaults/vault-operator/pkg/apis/vault/v1alpha1"
 	vaultClientV1alpha1 "github.com/bank-vaults/vault-operator/pkg/client/clientset/versioned/typed/vault/v1alpha1"
-	"github.com/bank-vaults/vault-secrets-reloader/pkg/reloader"
+	"github.com/davealmr/vault-secrets-reloader-namespaced/pkg/reloader"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
