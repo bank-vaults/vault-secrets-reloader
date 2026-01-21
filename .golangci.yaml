@@ -8,10 +8,10 @@ formatters:
       sections:
         - standard
         - default
-        - prefix(github.com/bank-vaults/vault-secrets-reloader)
+        - prefix(github.com/davealmr/vault-secrets-reloader-namespaced)
     goimports:
       local-prefixes:
-        - github.com/bank-vaults/vault-secrets-reloader
+        - github.com/davealmr/vault-secrets-reloader-namespaced
     gofmt:
       simplify: true
     gofumpt:

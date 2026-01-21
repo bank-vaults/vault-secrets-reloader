@@ -5,7 +5,7 @@ contact_links:
     about: Suggest an improvement to the documentation
 
   - name: ❓ Ask a question
-    url: https://github.com/bank-vaults/vault-secrets-reloader/discussions/new?category=q-a
+    url: https://github.com/davealmr/vault-secrets-reloader-namespaced/discussions/new?category=q-a
     about: Ask and discuss questions with other Bank-Vaults community members
 
   - name: 📚 Documentation

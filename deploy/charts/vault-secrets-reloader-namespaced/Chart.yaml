@@ -13,7 +13,7 @@ keywords:
 home: https://bank-vaults.dev
 sources:
   - https://github.com/hashicorp/vault
-  - https://github.com/bank-vaults/vault-secrets-reloader
+  - https://github.com/davealmr/vault-secrets-reloader-namespaced
 maintainers:
   - name: Bank Vaults Maintainers
     email: team@bank-vaults.dev

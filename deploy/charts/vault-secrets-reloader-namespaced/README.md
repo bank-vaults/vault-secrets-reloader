@@ -1,4 +1,4 @@
-# vault-secrets-reloader
+# vault-secrets-reloader-namespaced
 
 This chart will install Vault Secrets Reloader Controller, that reloads workloads on a referenced secret change in HashiCorp Vault.
 
@@ -25,7 +25,7 @@ You can prepare a separate namespace for Vault Secrets Reloader beforehand, crea
 1. Save Reloader default chart values:
 
 ```shell
-helm show values oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-reloader > values.yaml
+helm show values oci://ghcr.io/davealmr/helm-charts/vault-secrets-reloader-namespaced > values.yaml
 ```
 
 2. Check the configuration in `values.yaml` and update the required values if needed. Configure the time for periodic runs of the `collector` and `reloader` workers with a value in Go Duration format:
@@ -50,7 +50,7 @@ env:
 3. Install the chart:
 
 ```shell
-helm upgrade --install --values values.yaml vault-secrets-reloader oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-reloader --namespace bank-vaults-infra --create-namespace
+helm upgrade --install --values values.yaml vault-secrets-reloader-namespaced oci://ghcr.io/davealmr/helm-charts/vault-secrets-reloader-namespaced --namespace bank-vaults-infra --create-namespace
 ```
 
 ## Values
@@ -61,7 +61,7 @@ The following table lists the configurable parameters of the Helm chart.
 | --- | ---- | ------- | ----------- |
 | `logLevel` | string | `"info"` | Log level |
 | `enableJSONLog` | bool | `false` | Use JSON log format instead of text |
-| `image.repository` | string | `"ghcr.io/bank-vaults/vault-secrets-reloader"` | Container image repo that contains the Reloader Controller |
+| `image.repository` | string | `"ghcr.io/davealmr/vault-secrets-reloader-namespaced"` | Container image repo that contains the Reloader Controller |
 | `image.tag` | string | `""` | Container image tag |
 | `image.pullPolicy` | string | `"IfNotPresent"` | Container image pull policy |
 | `image.imagePullSecrets` | list | `[]` | Container image pull secrets for private repositories |
@@ -75,7 +75,7 @@ The following table lists the configurable parameters of the Helm chart.
 | `podAnnotations` | object | `{}` | Extra annotations to add to pod metadata |
 | `podSecurityContext` | object | `{}` | Pod security context for Reloader deployment |
 | `securityContext` | object | `{}` | Pod security context for Reloader containers |
-| `service.name` | string | `"vault-secrets-reloader"` | Reloader service name |
+| `service.name` | string | `"vault-secrets-reloader-namespaced"` | Reloader service name |
 | `service.type` | string | `"ClusterIP"` | Reloader service type |
 | `service.externalPort` | int | `443` | Reloader service external port |
 | `service.internalPort` | int | `8443` | Reloader service internal port |
@@ -100,4 +100,4 @@ Specify each parameter using the `--set key=value[,key=value]` argument to `helm
 
 ### Vault settings
 
-Make sure to add the `read` and `list` capabilities for secrets to the Vault auth role the Reloader will use. An example can be found in the [example Bank-Vaults Operator CR file](https://github.com/bank-vaults/vault-secrets-reloader/blob/main/e2e/deploy/vault/vault.yaml#L102).
+Make sure to add the `read` and `list` capabilities for secrets to the Vault auth role the Reloader will use. An example can be found in the [example Bank-Vaults Operator CR file](https://github.com/davealmr/vault-secrets-reloader-namespaced/blob/main/e2e/deploy/vault/vault.yaml#L102).

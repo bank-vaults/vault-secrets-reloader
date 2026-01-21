@@ -1,4 +1,4 @@
-module github.com/bank-vaults/vault-secrets-reloader
+module github.com/davealmr/vault-secrets-reloader-namespaced
 
 go 1.25.4
 

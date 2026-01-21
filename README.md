@@ -19,7 +19,7 @@ Upon deployment, the Reloader spawns two “workers”, that run periodically at
 
 2. The `reloader` iterates on the data collected by the `collector`, polling the configured Vault instance for the current version of the secrets, and if it finds that it differs from the stored one, adds the workloads where the secret is used to a list of workloads that needs reloading. In a following step, it modifies these workloads by incrementing the value of the `secrets-reloader.security.bank-vaults.io/secret-reload-count` annotation in their pod template metadata, initiating a new rollout.
 
-To get familiarized, check out [how Reloader fits in the Bank-Vaults ecosystem](https://github.com/bank-vaults/vault-secrets-reloader/blob/main/examples/reloader-in-bank-vaults-ecosystem.md), and how can you [give Reloader a spin](https://github.com/bank-vaults/vault-secrets-reloader/blob/main/examples/try-locally.md) on your local machine.
+To get familiarized, check out [how Reloader fits in the Bank-Vaults ecosystem](https://github.com/davealmr/vault-secrets-reloader-namespaced/blob/main/examples/reloader-in-bank-vaults-ecosystem.md), and how can you [give Reloader a spin](https://github.com/davealmr/vault-secrets-reloader-namespaced/blob/main/examples/try-locally.md) on your local machine.
 
 ### Current features, limitations
 
@@ -47,7 +47,7 @@ The chart also injects `POD_NAMESPACE` using the Downward API so the controller 
 namespace. The controller logs an error and exits if `POD_NAMESPACE` is not set.
 
 ```shell
-helm upgrade --install vault-secrets-reloader oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-reloader \
+helm upgrade --install vault-secrets-reloader oci://ghcr.io/davealmr/helm-charts/vault-secrets-reloader-namespaced \
     --set collectorSyncPeriod=2h \
     --set reloaderRunPeriod=4h \
     --set env.VAULT_ADDR=[URL for Vault]
@@ -61,7 +61,7 @@ helm upgrade --install vault-secrets-reloader oci://ghcr.io/bank-vaults/helm-cha
 Vault also needs to be configured with an auth method for the Reloader to use. Additionally, it is advised to create a
 role and policy that allows the Reloader to `read` and `list` secrets from Vault. An example can be found in the
 [example Bank-Vaults Operator CR
-file](https://github.com/bank-vaults/vault-secrets-reloader/blob/main/e2e/deploy/vault/vault.yaml#L102).
+file](https://github.com/davealmr/vault-secrets-reloader-namespaced/blob/main/e2e/deploy/vault/vault.yaml#L102).
 
 ## Development
 

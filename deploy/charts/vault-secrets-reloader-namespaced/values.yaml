@@ -9,7 +9,7 @@ enableJSONLog: false
 
 image:
   # -- Container image repo that contains the Reloader Controller
-  repository: ghcr.io/bank-vaults/vault-secrets-reloader
+  repository: ghcr.io/davealmr/vault-secrets-reloader-namespaced
   # Overrides the image tag whose default is the chart appVersion.
   # -- Container image tag
   tag: ""

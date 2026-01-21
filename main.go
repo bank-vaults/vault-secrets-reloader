@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
-	"github.com/bank-vaults/vault-secrets-reloader/pkg/reloader"
+	"github.com/davealmr/vault-secrets-reloader-namespaced/pkg/reloader"
 )
 
 const (
@@ -97,7 +97,7 @@ func main() {
 
 		// TODO: add level filter handler
 		logger = slog.New(router.Handler())
-		logger = logger.With(slog.String("app", "vault-secrets-reloader"))
+		logger = logger.With(slog.String("app", "vault-secrets-reloader-namespaced"))
 
 		slog.SetDefault(logger)
 	}

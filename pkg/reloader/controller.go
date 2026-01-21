@@ -112,7 +112,7 @@ func (c *Controller) Run(ctx context.Context, reloaderPeriod time.Duration) erro
 	defer utilruntime.HandleCrash()
 
 	// Start the informer factories to begin populating the informer caches
-	c.logger.Info("Starting vault-secrets-reloader controller")
+	c.logger.Info("Starting vault-secrets-reloader-namespaced controller")
 
 	// Wait for the caches to be synced before starting reloader
 	c.logger.Info("Waiting for informer caches to sync")

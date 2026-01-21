@@ -12,7 +12,7 @@ You only need Docker and the [Vault CLI](https://developer.hashicorp.com/vault/t
 
 ## 1. Prepare the environment
 
-Clone the [repo](https://github.com/bank-vaults/vault-secrets-reloader) and `cd` into it. With only a few `make` commands, you will have a kind cluster running with the Bank-Vaults ecosystem, including the Reloader:
+Clone the [repo](https://github.com/davealmr/vault-secrets-reloader-namespaced) and `cd` into it. With only a few `make` commands, you will have a kind cluster running with the Bank-Vaults ecosystem, including the Reloader:
 
 ```bash
 # install dependencies
@@ -31,7 +31,7 @@ make deploy-kind
 The last command will install the Reloader Helm chart with the following configuration:
 
 ```bash
-helm upgrade --install vault-secrets-reloader deploy/charts/vault-secrets-reloader \
+helm upgrade --install vault-secrets-reloader-namespaced deploy/charts/vault-secrets-reloader \
     --set image.tag=dev \
     --set collectorSyncPeriod=30s \
     --set reloaderRunPeriod=1m \

@@ -25,7 +25,7 @@ You can prepare a separate namespace for Vault Secrets Reloader beforehand, crea
 1. Save Reloader default chart values:
 
 ```shell
-helm show values oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-reloader > values.yaml
+helm show values oci://ghcr.io/davealmr/helm-charts/vault-secrets-reloader-namespaced > values.yaml
 ```
 
 2. Check the configuration in `values.yaml` and update the required values if needed. Configure the time for periodic runs of the `collector` and `reloader` workers with a value in Go Duration format:
@@ -50,7 +50,7 @@ env:
 3. Install the chart:
 
 ```shell
-helm upgrade --install --values values.yaml vault-secrets-reloader oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-reloader --namespace bank-vaults-infra --create-namespace
+helm upgrade --install --values values.yaml vault-secrets-reloader-namespaced oci://ghcr.io/davealmr/helm-charts/vault-secrets-reloader-namespaced --namespace bank-vaults-infra --create-namespace
 ```
 
 {{ define "chart.valuesTableHtml" }}
@@ -71,4 +71,4 @@ Specify each parameter using the `--set key=value[,key=value]` argument to `helm
 
 ### Vault settings
 
-Make sure to add the `read` and `list` capabilities for secrets to the Vault auth role the Reloader will use. An example can be found in the [example Bank-Vaults Operator CR file](https://github.com/bank-vaults/vault-secrets-reloader/blob/main/e2e/deploy/vault/vault.yaml#L102).
+Make sure to add the `read` and `list` capabilities for secrets to the Vault auth role the Reloader will use. An example can be found in the [example Bank-Vaults Operator CR file](https://github.com/davealmr/vault-secrets-reloader-namespaced/blob/main/e2e/deploy/vault/vault.yaml#L102).
