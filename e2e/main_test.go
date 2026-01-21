@@ -206,7 +206,7 @@ func installVaultSecretsReloader(ctx context.Context, cfg *envconf.Config) (cont
 		version = v
 	}
 
-	chart := "../deploy/charts/vault-secrets-reloader/"
+	chart := "../deploy/charts/vault-secrets-reloader-namespaced/"
 	if v := os.Getenv("HELM_CHART"); v != "" {
 		chart = v
 	}
@@ -230,7 +230,7 @@ func uninstallVaultSecretsReloader(ctx context.Context, cfg *envconf.Config) (co
 	manager := helm.New(cfg.KubeconfigFile())
 
 	err := manager.RunUninstall(
-		helm.WithName("vault-secrets-reloader"),
+		helm.WithName("vault-secrets-reloader-namespaced"),
 		helm.WithNamespace("bank-vaults-infra"),
 		helm.WithWait(),
 		helm.WithTimeout(defaultTimeout.String()),
