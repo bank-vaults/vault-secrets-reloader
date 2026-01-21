@@ -229,7 +229,10 @@ jobs:
 
       - name: Set OCI registry name
         id: oci-registry-name
-        run: echo "value=ghcr.io/${{ github.repository_owner }}/helm-charts" >> "$GITHUB_OUTPUT"
+        shell: bash
+        run: |
+          owner="${{ github.repository_owner }}"
+          echo "value=ghcr.io/${owner,,}/helm-charts" >> "$GITHUB_OUTPUT"
 
       - name: Set OCI chart name
         id: oci-chart-name
