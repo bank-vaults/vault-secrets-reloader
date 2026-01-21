@@ -284,8 +284,10 @@ jobs:
 
       - name: Helm push
         id: push
+        shell: bash
         run: |
-          helm push ${{ steps.build.outputs.package }} oci://${{ steps.oci-registry-name.outputs.value }} &> push-metadata.txt
+          set -o pipefail
+          helm push "${{ steps.build.outputs.package }}" "oci://${{ steps.oci-registry-name.outputs.value }}" 2>&1 | tee push-metadata.txt
           echo "digest=$(awk '/Digest: /{print $2}' push-metadata.txt)" >> "$GITHUB_OUTPUT"
         env:
           HELM_REGISTRY_CONFIG: ~/.docker/config.json
