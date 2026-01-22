@@ -212,7 +212,7 @@ func installVaultSecretsReloader(ctx context.Context, cfg *envconf.Config) (cont
 	}
 
 	err := manager.RunInstall(
-		helm.WithName("vault-secrets-reloader"),
+		helm.WithName("vault-secrets-reloader-namespaced"),
 		helm.WithChart(chart),
 		helm.WithNamespace("bank-vaults-infra"),
 		helm.WithArgs("--set", "image.tag="+version, "--set", "logLevel=debug", "--set", "collectorSyncPeriod=15s", "--set", "reloaderRunPeriod=15s", "--set", "env.VAULT_ROLE=reloader", "--set", "env.VAULT_ADDR=https://vault.default.svc.cluster.local:8200", "--set", "env.VAULT_TLS_SECRET=vault-tls", "--set", "env.VAULT_TLS_SECRET_NS=bank-vaults-infra"),
