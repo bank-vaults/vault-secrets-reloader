@@ -29,17 +29,23 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// dynamicSecretRestartThreshold is the percentage of TTL at which to restart pods with dynamic secrets
+	dynamicSecretRestartThreshold = 0.7
+)
+
 type VaultConfig struct {
-	Addr                 string
-	AuthMethod           string
-	Role                 string
-	Path                 string
-	Namespace            string
-	SkipVerify           bool
-	TLSSecret            string
-	TLSSecretNS          string
-	ClientTimeout        time.Duration
-	IgnoreMissingSecrets bool
+	Addr                          string
+	AuthMethod                    string
+	Role                          string
+	Path                          string
+	Namespace                     string
+	SkipVerify                    bool
+	TLSSecret                     string
+	TLSSecretNS                   string
+	ClientTimeout                 time.Duration
+	IgnoreMissingSecrets          bool
+	DynamicSecretRestartThreshold float64
 }
 
 func getVaultConfigFromEnv() *VaultConfig {
@@ -82,6 +88,15 @@ func getVaultConfigFromEnv() *VaultConfig {
 	}
 
 	vaultConfig.IgnoreMissingSecrets, _ = strconv.ParseBool(os.Getenv("VAULT_IGNORE_MISSING_SECRETS"))
+
+	if thresholdStr := os.Getenv("VAULT_DYNAMIC_SECRET_RESTART_THRESHOLD"); thresholdStr != "" {
+		if threshold, err := strconv.ParseFloat(thresholdStr, 64); err == nil {
+			vaultConfig.DynamicSecretRestartThreshold = threshold
+		}
+	}
+	if vaultConfig.DynamicSecretRestartThreshold == 0 {
+		vaultConfig.DynamicSecretRestartThreshold = dynamicSecretRestartThreshold
+	}
 
 	return &vaultConfig
 }
@@ -168,22 +183,93 @@ func (e ErrSecretNotFound) Error() string {
 	return fmt.Sprintf("Vault secret path %s not found", e.secretPath)
 }
 
+type DynamicSecretLease struct {
+	LeaseID       string
+	LeaseDuration int
+	LeaseExpiry   time.Time
+	SecretPath    string
+	Renewable     bool
+}
+
 type vaultSecretReader interface {
 	Read(path string) (*vaultapi.Secret, error)
 }
 
-func getSecretVersionFromVault(vaultClient vaultSecretReader, secretPath string) (int, error) {
+type SecretInfo struct {
+	Version   int
+	IsKV      bool
+	IsDynamic bool
+	LeaseInfo *DynamicSecretLease
+}
+
+func getSecretInfoFromVault(vaultClient vaultSecretReader, secretPath string) (*SecretInfo, error) {
 	secret, err := vaultClient.Read(secretPath)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	if secret != nil {
-		secretVersion, err := secret.Data["metadata"].(map[string]interface{})["version"].(json.Number).Int64()
-		if err != nil {
-			return 0, err
-		}
-		return int(secretVersion), nil
+	if secret == nil {
+		return nil, ErrSecretNotFound{secretPath: secretPath}
 	}
 
-	return 0, ErrSecretNotFound{secretPath: secretPath}
+	info := &SecretInfo{}
+
+	// Check if this is a dynamic secret (has lease information)
+	if secret.LeaseID != "" {
+		info.IsDynamic = true
+		info.LeaseInfo = &DynamicSecretLease{
+			LeaseID:       secret.LeaseID,
+			LeaseDuration: secret.LeaseDuration,
+			LeaseExpiry:   time.Now().Add(time.Duration(secret.LeaseDuration) * time.Second),
+			SecretPath:    secretPath,
+			Renewable:     secret.Renewable,
+		}
+		return info, nil
+	}
+
+	// This is a KV v2 secret
+	info.IsKV = true
+	metadata, ok := secret.Data["metadata"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("secret at path %s does not have metadata field (not a KV v2 secret or dynamic secret)", secretPath)
+	}
+
+	versionNum, ok := metadata["version"].(json.Number)
+	if !ok {
+		return nil, fmt.Errorf("secret at path %s metadata missing version field", secretPath)
+	}
+
+	secretVersion, err := versionNum.Int64()
+	if err != nil {
+		return nil, err
+	}
+	info.Version = int(secretVersion)
+
+	return info, nil
+}
+
+func renewDynamicSecretLease(vaultClient vaultSecretReader, lease *DynamicSecretLease) (*DynamicSecretLease, error) {
+	// Re-read the secret to get fresh credentials with a new lease
+	secret, err := vaultClient.Read(lease.SecretPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read dynamic secret %s: %w", lease.SecretPath, err)
+	}
+
+	if secret == nil {
+		return nil, fmt.Errorf("dynamic secret at path %s not found", lease.SecretPath)
+	}
+
+	if secret.LeaseID == "" {
+		return nil, fmt.Errorf("secret at path %s is no longer a dynamic secret", lease.SecretPath)
+	}
+
+	// Create new lease info from the fresh read
+	renewedLease := &DynamicSecretLease{
+		LeaseID:       secret.LeaseID,
+		LeaseDuration: secret.LeaseDuration,
+		LeaseExpiry:   time.Now().Add(time.Duration(secret.LeaseDuration) * time.Second),
+		SecretPath:    lease.SecretPath,
+		Renewable:     secret.Renewable,
+	}
+
+	return renewedLease, nil
 }
