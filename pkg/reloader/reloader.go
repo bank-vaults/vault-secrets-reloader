@@ -73,9 +73,11 @@ func (c *Controller) runReloader(ctx context.Context) {
 
 					// Update stored version
 					c.trackingMutex.Lock()
-					for i := range c.workloadSecrets.GetWorkloadSecretsMap()[workload] {
-						if c.workloadSecrets.GetWorkloadSecretsMap()[workload][i].Path == currentSecretMetadata.Path {
-							c.workloadSecrets.GetWorkloadSecretsMap()[workload][i].KVVersion = currentInfo.Version
+					workloadSecretsMap := c.workloadSecrets.GetWorkloadSecretsMap()
+					secrets := workloadSecretsMap[workload]
+					for i := range secrets {
+						if secrets[i].Path == currentSecretMetadata.Path {
+							secrets[i].KVVersion = currentInfo.Version
 						}
 					}
 					c.trackingMutex.Unlock()
