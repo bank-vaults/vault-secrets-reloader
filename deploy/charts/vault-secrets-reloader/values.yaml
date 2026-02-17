@@ -98,6 +98,7 @@ env: {}
   # VAULT_PATH: "kubernetes"
   # VAULT_CLIENT_TIMEOUT: "10s"
   # VAULT_IGNORE_MISSING_SECRETS: "false"
+  # VAULT_DYNAMIC_SECRET_RESTART_THRESHOLD: "0.70"
 
 # -- Extra volume definitions for Reloader deployment
 volumes: []

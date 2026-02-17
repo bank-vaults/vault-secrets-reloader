@@ -30,80 +30,127 @@ func (c *Controller) runReloader(ctx context.Context) {
 	reloaderLogger.Info("Reloader started")
 
 	if len(c.workloadSecrets.GetWorkloadSecretsMap()) == 0 {
-		reloaderLogger.Info("No workloads to reload")
+		reloaderLogger.Info("No deployments to monitor")
 		return
 	}
 
-	err := c.initVaultClient()
+	err := c.initVaultClientFn()
 	if err != nil {
 		reloaderLogger.Error(fmt.Errorf("failed to initialize Vault client: %w", err).Error())
 		return
 	}
 
-	// Create a secretWorkloads map and compare the currently used secrets' version
-	// with the one stored in the secretVersions map, while creating a new secretVersions map
-	workloadsToReload := make(map[workload]bool)
-	newSecretVersions := make(map[string]int)
+	// Check for KV version changes per deployment
+	workloadsWithKVChanges := make(map[workload]bool)
+
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	for secretPath, workloads := range c.workloadSecrets.GetSecretWorkloadsMap() {
+	for currentSecretMetadata, workloads := range c.workloadSecrets.GetSecretWorkloadsMap() {
 		wg.Add(1)
-		go func(secretPath string, workloads []workload) {
+		go func(currentSecretMetadata secretMetadata, workloads []workload) {
 			defer wg.Done()
-			reloaderLogger.Debug(fmt.Sprintf("Checking secret: %s", secretPath))
+			reloaderLogger.Debug(fmt.Sprintf("Checking secret: %s", currentSecretMetadata.Path))
+
+			if !currentSecretMetadata.IsKV {
+				return
+			}
 
 			// Get current secret version
-			currentVersion, err := getSecretVersionFromVault(c.vaultClient.Logical(), secretPath)
+			currentInfo, err := c.getSecretInfoFn(c.getVaultLogicalFn(), currentSecretMetadata.Path)
 			if err != nil {
-				c.handleSecretError(err, secretPath, reloaderLogger)
+				c.handleSecretError(err, currentSecretMetadata.Path, reloaderLogger)
 				return
 			}
 
 			mu.Lock()
 			defer mu.Unlock()
 
-			// Compare secret versions
-			switch c.secretVersions[secretPath] {
-			case 0:
-				reloaderLogger.Debug(fmt.Sprintf("Secret %s not found in secretVersions map, creating it", secretPath))
-			case currentVersion:
-				reloaderLogger.Debug(fmt.Sprintf("Secret %s did not change", secretPath))
-			default:
-				reloaderLogger.Debug(fmt.Sprintf("Secret version stored: %d current: %d", c.secretVersions[secretPath], currentVersion))
+			if currentInfo.IsKV && currentInfo.Version != currentSecretMetadata.KVVersion {
 				for _, workload := range workloads {
-					workloadsToReload[workload] = true
+					reloaderLogger.Info(fmt.Sprintf("KV secret %s version changed from %d to %d for workload %s/%s",
+						currentSecretMetadata.Path, currentSecretMetadata.KVVersion, currentInfo.Version, workload.namespace, workload.name))
+					workloadsWithKVChanges[workload] = true
+
+					// Update stored version
+					c.trackingMutex.Lock()
+					workloadSecretsMap := c.workloadSecrets.GetWorkloadSecretsMap()
+					secrets := workloadSecretsMap[workload]
+					for i := range secrets {
+						if secrets[i].Path == currentSecretMetadata.Path {
+							secrets[i].KVVersion = currentInfo.Version
+						}
+					}
+					c.trackingMutex.Unlock()
 				}
 			}
-
-			newSecretVersions[secretPath] = currentVersion
-		}(secretPath, workloads)
+		}(currentSecretMetadata, workloads)
 	}
 	// wait for secret version checking to complete
 	wg.Wait()
 
+	// Check workloads for time-based and KV-based restarts
+	workloadsToReload := make(map[workload]string) // value: reason for restart
+	now := c.now()
+
+	c.trackingMutex.RLock()
+	trackingCopy := make(map[workload]*workloadTrackingInfo)
+	for k, v := range c.workloadTracking {
+		trackingCopy[k] = v
+	}
+	c.trackingMutex.RUnlock()
+
+	for workload, trackingInfo := range trackingCopy {
+		// Check if workload has KV changes
+		if workloadsWithKVChanges[workload] {
+			reloaderLogger.Info(fmt.Sprintf("Workload %s/%s needs restart due to KV secret version change", workload.namespace, workload.name))
+			workloadsToReload[workload] = "KV secret version changed"
+			continue
+		}
+
+		// Check time-based restart for dynamic secrets
+		if trackingInfo.ShortestDynamicTTL > 0 {
+			elapsedSeconds := int(now.Sub(trackingInfo.LastRestartTime).Seconds())
+			restartThreshold := int(float64(trackingInfo.ShortestDynamicTTL) * c.vaultConfig.DynamicSecretRestartThreshold)
+
+			if elapsedSeconds >= restartThreshold {
+				reloaderLogger.Info(fmt.Sprintf("Workload %s/%s needs restart: elapsed=%ds, threshold=%ds (%.0f%%%% of %ds TTL)",
+					workload.namespace, workload.name, elapsedSeconds, restartThreshold, c.vaultConfig.DynamicSecretRestartThreshold*100, trackingInfo.ShortestDynamicTTL))
+				workloadsToReload[workload] = fmt.Sprintf("Dynamic secret TTL threshold reached (%ds/%ds)", elapsedSeconds, restartThreshold)
+			}
+		}
+	}
+
 	// Reloading workloads
 	wg = sync.WaitGroup{} // Reset the WaitGroup
-	for workloadToReload := range workloadsToReload {
+	for workloadToReload, reason := range workloadsToReload {
 		wg.Add(1)
-		go func(workloadToReload workload) {
+		go func(workloadToReload workload, reason string) {
 			defer wg.Done()
-			reloaderLogger.Info(fmt.Sprintf("Reloading workload: %s", workloadToReload))
+			reloaderLogger.Info(fmt.Sprintf("Triggering rolling restart for %s %s/%s: %s", workloadToReload.kind, workloadToReload.namespace, workloadToReload.name, reason))
 
-			err := c.reloadWorkload(ctx, workloadToReload)
+			err := c.reloadWorkloadFn(ctx, workloadToReload)
 			if err != nil {
-				reloaderLogger.Error(fmt.Errorf("failed reloading workload: %s: %w", workloadToReload, err).Error())
+				reloaderLogger.Error(fmt.Sprintf("Failed to restart %s %s/%s: %v", workloadToReload.kind, workloadToReload.namespace, workloadToReload.name, err))
+				return
 			}
-		}(workloadToReload)
+
+			reloaderLogger.Info(fmt.Sprintf("Successfully triggered rolling restart for %s %s/%s", workloadToReload.kind, workloadToReload.namespace, workloadToReload.name))
+
+			// Update last restart time
+			c.trackingMutex.Lock()
+			if tracking, exists := c.workloadTracking[workloadToReload]; exists {
+				tracking.LastRestartTime = now
+			}
+			c.trackingMutex.Unlock()
+		}(workloadToReload, reason)
 	}
 	// wait for workload reloading to complete
 	wg.Wait()
 
-	// Replace secretVersions map with the new one so we don't keep deleted secrets in the map
-	c.secretVersions = newSecretVersions
-	reloaderLogger.Debug(fmt.Sprintf("Updated secretVersions map: %#v", newSecretVersions))
-
 	if len(workloadsToReload) == 0 {
-		reloaderLogger.Info("No workloads to reload")
+		reloaderLogger.Info(fmt.Sprintf("No workloads need restart (monitoring %d workloads)", len(c.workloadTracking)))
+	} else {
+		reloaderLogger.Info(fmt.Sprintf("Triggered rolling restart for %d workloads", len(workloadsToReload)))
 	}
 }
 
