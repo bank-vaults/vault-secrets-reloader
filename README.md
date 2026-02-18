@@ -1,4 +1,4 @@
-# Vault Secrets Reloader
+# Vault Secrets Reloader 
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/DaveAlmR/vault-secrets-reloader-namespaced)](https://goreportcard.com/report/github.com/DaveAlmR/vault-secrets-reloader-namespaced)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/DaveAlmR/vault-secrets-reloader-namespaced/ci.yaml?branch=main&style=flat-square)](https://github.com/DaveAlmR/vault-secrets-reloader-namespaced/actions/workflows/ci.yaml?query=workflow%3ACI)
