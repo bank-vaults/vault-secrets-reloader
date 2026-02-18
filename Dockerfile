@@ -1,6 +1,6 @@
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.9.0@sha256:c64defb9ed5a91eacb37f96ccc3d4cd72521c4bd18d5442905b95e2226b0e707 AS xx
 
-FROM --platform=$BUILDPLATFORM golang:1.26rc2-alpine3.22@sha256:9cdde6d36f579aed530b070137a2ae7e42a936a3289152ce40f49b17409860e1 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine3.22@sha256:169d3991a4f795124a88b33c73549955a3d856e26e8504b5530c30bd245f9f1b AS builder
 
 COPY --from=xx / /
 
@@ -27,7 +27,7 @@ RUN go build -o /usr/local/bin/vault-secrets-reloader .
 RUN xx-verify /usr/local/bin/vault-secrets-reloader
 
 
-FROM alpine:3.23.2@sha256:865b95f46d98cf867a156fe4a135ad3fe50d2056aa3f25ed31662dff6da4eb62
+FROM alpine:3.23.3@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659
 
 RUN apk add --update --no-cache ca-certificates tzdata libcap
 
