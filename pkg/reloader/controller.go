@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	vaultapi "github.com/hashicorp/vault/api"
@@ -56,8 +57,19 @@ type Controller struct {
 	statefulSetsSynced cache.InformerSynced
 
 	// workloadSecrets map[Workload][]string
-	workloadSecrets workloadSecretsStore
-	secretVersions  map[string]int
+	workloadSecrets     workloadSecretsStore
+	dynamicSecretLeases map[string]*DynamicSecretLease
+
+	// tracking for secret metadata and restart times
+	workloadTracking map[workload]*workloadTrackingInfo
+	trackingMutex    sync.RWMutex
+
+	// Test seams for dependency injection
+	now               func() time.Time
+	initVaultClientFn func() error
+	getSecretInfoFn   func(vaultSecretReader, string) (*SecretInfo, error)
+	reloadWorkloadFn  func(context.Context, workload) error
+	getVaultLogicalFn func() vaultSecretReader
 }
 
 // NewController returns a new sample controller
@@ -69,17 +81,29 @@ func NewController(
 	statefulSetInformer appsinformers.StatefulSetInformer,
 ) *Controller {
 	controller := &Controller{
-		kubeClient:         kubeClient,
-		logger:             logger,
-		deploymentsLister:  deploymentInformer.Lister(),
-		deploymentsSynced:  deploymentInformer.Informer().HasSynced,
-		daemonSetsLister:   daemonSetInformer.Lister(),
-		daemonSetsSynced:   daemonSetInformer.Informer().HasSynced,
-		statefulSetsLister: statefulSetInformer.Lister(),
-		statefulSetsSynced: deploymentInformer.Informer().HasSynced,
-		workloadSecrets:    newWorkloadSecrets(),
-		secretVersions:     make(map[string]int),
+		kubeClient:          kubeClient,
+		logger:              logger,
+		deploymentsLister:   deploymentInformer.Lister(),
+		deploymentsSynced:   deploymentInformer.Informer().HasSynced,
+		daemonSetsLister:    daemonSetInformer.Lister(),
+		daemonSetsSynced:    daemonSetInformer.Informer().HasSynced,
+		statefulSetsLister:  statefulSetInformer.Lister(),
+		statefulSetsSynced:  statefulSetInformer.Informer().HasSynced,
+		workloadSecrets:     newWorkloadSecrets(),
+		dynamicSecretLeases: make(map[string]*DynamicSecretLease),
+		workloadTracking:    make(map[workload]*workloadTrackingInfo),
+
+		now:               time.Now,
+		initVaultClientFn: func() error { return nil }, // Will be set below
+		getSecretInfoFn:   getSecretInfoFromVault,
+		reloadWorkloadFn:  func(context.Context, workload) error { return nil }, // Will be set below
+		getVaultLogicalFn: func() vaultSecretReader { return nil },              // Will be set below
 	}
+
+	// Set the methods that need the controller reference
+	controller.initVaultClientFn = controller.initVaultClient
+	controller.reloadWorkloadFn = controller.reloadWorkload
+	controller.getVaultLogicalFn = func() vaultSecretReader { return controller.vaultClient.Logical() }
 
 	logger.Info("Setting up event handlers")
 
@@ -137,18 +161,23 @@ func (c *Controller) handleObject(obj interface{}) {
 	// Get required params from supported workloads
 	var workloadData workload
 	var podTemplateSpec corev1.PodTemplateSpec
+	var selector *metav1.LabelSelector
+
 	switch o := obj.(type) {
 	case *appsv1.Deployment:
 		workloadData = workload{name: o.Name, namespace: o.Namespace, kind: DeploymentKind}
 		podTemplateSpec = o.Spec.Template
+		selector = o.Spec.Selector
 
 	case *appsv1.DaemonSet:
 		workloadData = workload{name: o.Name, namespace: o.Namespace, kind: DaemonSetKind}
 		podTemplateSpec = o.Spec.Template
+		selector = o.Spec.Selector
 
 	case *appsv1.StatefulSet:
 		workloadData = workload{name: o.Name, namespace: o.Namespace, kind: StatefulSetKind}
 		podTemplateSpec = o.Spec.Template
+		selector = o.Spec.Selector
 
 	default:
 		// Unsupported workload
@@ -160,8 +189,19 @@ func (c *Controller) handleObject(obj interface{}) {
 	if podTemplateSpec.GetAnnotations()[SecretReloadAnnotationName] != "true" {
 		return
 	}
+
 	c.logger.Debug(fmt.Sprintf("Processing workload: %#v", workloadData))
 	c.collectWorkloadSecrets(workloadData, podTemplateSpec)
+
+	// Track pods for this workload
+	if selector != nil {
+		pods, err := c.listPodsForSelector(workloadData.namespace, selector)
+		if err != nil {
+			c.logger.Error(fmt.Sprintf("failed to list pods for workload %s/%s: %v", workloadData.namespace, workloadData.name, err))
+			return
+		}
+		c.trackWorkloadRestartTime(workloadData, pods)
+	}
 }
 
 // handleObjectDelete will take any resource implementing metav1.Object and deletes
@@ -207,6 +247,31 @@ func (c *Controller) handleObjectDelete(obj interface{}) {
 	if podTemplateSpec.GetAnnotations()[SecretReloadAnnotationName] != "true" {
 		return
 	}
+
 	c.logger.Debug(fmt.Sprintf("Deleting workload from store: %#v", workloadData))
+
+	// Remove deployment secrets and tracking
+	c.trackingMutex.Lock()
+	delete(c.workloadTracking, workloadData)
+	c.trackingMutex.Unlock()
+
+	// Also clean up old tracking (outside of trackingMutex to avoid lock coupling)
 	c.workloadSecrets.Delete(workloadData)
+}
+
+func (c *Controller) listPodsForSelector(namespace string, selector *metav1.LabelSelector) ([]corev1.Pod, error) {
+	labelSelector, err := metav1.LabelSelectorAsSelector(selector)
+	if err != nil {
+		return nil, err
+	}
+
+	podList, err := c.kubeClient.CoreV1().Pods(namespace).List(
+		context.Background(),
+		metav1.ListOptions{LabelSelector: labelSelector.String()},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return podList.Items, nil
 }
