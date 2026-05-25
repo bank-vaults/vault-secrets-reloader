@@ -1,6 +1,6 @@
 module github.com/bank-vaults/vault-secrets-reloader
 
-go 1.26.2
+go 1.26.3
 
 require (
 	github.com/bank-vaults/secrets-webhook v0.3.1
