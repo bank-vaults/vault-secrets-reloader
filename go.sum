@@ -15,8 +15,8 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkY
 github.com/aws/aws-sdk-go v1.34.0/go.mod h1:5zCpMtNQVjRREroY7sYe8lOMRSxkhG6MZveU8YkpAk0=
 github.com/aws/aws-sdk-go v1.55.8 h1:JRmEUbU52aJQZ2AjX4q4Wu7t4uZjOu71uyNmaWlUkJQ=
 github.com/aws/aws-sdk-go v1.55.8/go.mod h1:ZkViS9AqA6otK+JBBNH2++sx1sgxrPKcSzPPvQkUtXk=
-github.com/bank-vaults/secrets-webhook v0.4.0 h1:HMtFgzQ9w2lbkMJKN8ClScdBgxdGs/Esn8hi1Q55BPI=
-github.com/bank-vaults/secrets-webhook v0.4.0/go.mod h1:YWP2arsHGS10+8LC5UiSvQFjZlbpQO7IYCH6PtI1v24=
+github.com/bank-vaults/secrets-webhook v0.4.1 h1:WiV+6rVf08DhCCGN6jfaiLkrIHnhYMlJISlZXsyrzDU=
+github.com/bank-vaults/secrets-webhook v0.4.1/go.mod h1:wofGWwmBw2NULahHgMJN/Qyh7wW3k2ylC7EpCTN5q48=
 github.com/bank-vaults/vault-operator v1.24.0 h1:TsOsWLaPfFjP5wFqBHZVMZhq6b4zdLwVHOicW7/kJbs=
 github.com/bank-vaults/vault-operator v1.24.0/go.mod h1:AP1iBrTD7UgSHAR9X7awcHapXUpY4uXCdf0CTkrWPzk=
 github.com/bank-vaults/vault-sdk v0.12.0 h1:fNTP0cq9o5zNHB6+zylwZCyhlXAD/q3Z/8SOJBOhaVA=
