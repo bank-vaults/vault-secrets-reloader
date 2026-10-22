@@ -162,7 +162,13 @@ func (c *Controller) initVaultClient() error {
 // sys/health only in the root namespace and rejects the request with "operation
 // unavailable in namespaces" when any namespace header is set, including "root".
 func checkVaultHealth(client *vaultapi.Client) error {
-	_, err := client.WithNamespace("").Sys().Health()
+	healthClient, err := client.CloneWithHeaders()
+	if err != nil {
+		return err
+	}
+	healthClient.SetToken(client.Token())
+	healthClient.ClearNamespace()
+	_, err = healthClient.Sys().Health()
 	return err
 }
 
