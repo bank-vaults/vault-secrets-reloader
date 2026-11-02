@@ -56,6 +56,11 @@ func (c *Controller) runReloader(ctx context.Context) {
 			currentVersion, err := getSecretVersionFromVault(c.vaultClient.Logical(), secretPath)
 			if err != nil {
 				c.handleSecretError(err, secretPath, reloaderLogger)
+				mu.Lock()
+				if version, ok := c.secretVersions[secretPath]; ok {
+					newSecretVersions[secretPath] = version
+				}
+				mu.Unlock()
 				return
 			}
 
