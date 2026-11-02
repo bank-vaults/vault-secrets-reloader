@@ -31,6 +31,7 @@ func (c *Controller) runReloader(ctx context.Context) {
 
 	if len(c.workloadSecrets.GetWorkloadSecretsMap()) == 0 {
 		reloaderLogger.Info("No workloads to reload")
+		c.pendingReloads = nil
 		return
 	}
 
@@ -46,7 +47,19 @@ func (c *Controller) runReloader(ctx context.Context) {
 	newSecretVersions := make(map[string]int)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	for secretPath, workloads := range c.workloadSecrets.GetSecretWorkloadsMap() {
+	secretWorkloads := c.workloadSecrets.GetSecretWorkloadsMap()
+	trackedWorkloads := make(map[workload]bool)
+	for _, workloads := range secretWorkloads {
+		for _, w := range workloads {
+			trackedWorkloads[w] = true
+		}
+	}
+	for w := range c.pendingReloads {
+		if trackedWorkloads[w] {
+			workloadsToReload[w] = true
+		}
+	}
+	for secretPath, workloads := range secretWorkloads {
 		wg.Add(1)
 		go func(secretPath string, workloads []workload) {
 			defer wg.Done()
@@ -87,6 +100,7 @@ func (c *Controller) runReloader(ctx context.Context) {
 	wg.Wait()
 
 	// Reloading workloads
+	nextPendingReloads := make(map[workload]bool)
 	wg = sync.WaitGroup{} // Reset the WaitGroup
 	for workloadToReload := range workloadsToReload {
 		wg.Add(1)
@@ -97,11 +111,16 @@ func (c *Controller) runReloader(ctx context.Context) {
 			err := c.reloadWorkload(ctx, workloadToReload)
 			if err != nil {
 				reloaderLogger.Error(fmt.Errorf("failed reloading workload: %s: %w", workloadToReload, err).Error())
+				mu.Lock()
+				nextPendingReloads[workloadToReload] = true
+				mu.Unlock()
 			}
 		}(workloadToReload)
 	}
 	// wait for workload reloading to complete
 	wg.Wait()
+
+	c.pendingReloads = nextPendingReloads
 
 	// Replace secretVersions map with the new one so we don't keep deleted secrets in the map
 	c.secretVersions = newSecretVersions

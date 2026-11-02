@@ -58,6 +58,8 @@ type Controller struct {
 	// workloadSecrets map[Workload][]string
 	workloadSecrets workloadSecretsStore
 	secretVersions  map[string]int
+	// pendingReloads is owned by the sequential reloader worker.
+	pendingReloads map[workload]bool
 }
 
 // NewController returns a new sample controller
