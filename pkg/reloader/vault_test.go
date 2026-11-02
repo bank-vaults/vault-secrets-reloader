@@ -16,6 +16,8 @@ package reloader
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
@@ -34,7 +36,7 @@ func TestGetVaultConfigFromEnv(t *testing.T) {
 			AuthMethod:           "jwt",
 			Role:                 "",
 			Path:                 "kubernetes",
-			Namespace:            "default",
+			Namespace:            "",
 			SkipVerify:           false,
 			TLSSecret:            "",
 			TLSSecretNS:          "default",
@@ -93,6 +95,31 @@ func TestGetVaultConfigFromEnv(t *testing.T) {
 		vaultConfig := getVaultConfigFromEnv()
 		assert.Equal(t, defaults, *vaultConfig)
 	})
+}
+
+func TestCheckVaultHealth(t *testing.T) {
+	var gotPath string
+	var gotNamespace []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotNamespace = r.Header.Values(vaultapi.NamespaceHeaderName)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"initialized":true,"sealed":false,"standby":false}`))
+	}))
+	defer server.Close()
+
+	config := vaultapi.DefaultConfig()
+	config.Address = server.URL
+	client, err := vaultapi.NewClient(config)
+	if err != nil {
+		t.Fatalf("failed to create Vault client: %v", err)
+	}
+	client.SetNamespace("ns1")
+
+	assert.NoError(t, checkVaultHealth(client))
+	assert.Equal(t, "/v1/sys/health", gotPath)
+	assert.Empty(t, gotNamespace)
+	assert.Equal(t, "ns1", client.Namespace(), "the namespace of the original client must be kept")
 }
 
 type vaultClientMock struct {

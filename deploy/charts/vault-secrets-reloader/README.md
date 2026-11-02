@@ -42,7 +42,8 @@ env:
   # define env vars for Vault used for authentication
   VAULT_ROLE: "reloader"
   VAULT_ADDR: "https://vault.default.svc.cluster.local:8200"
-  VAULT_NAMESPACE: "default"
+  # optional: Vault Enterprise or OpenBao namespace; leave unset to use the root namespace
+  # VAULT_NAMESPACE: "my-namespace"
   VAULT_TLS_SECRET: "vault-tls"
   VAULT_TLS_SECRET_NS: "bank-vaults-infra"
 ```

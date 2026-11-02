@@ -62,10 +62,8 @@ func getVaultConfigFromEnv() *VaultConfig {
 		vaultConfig.Path = "kubernetes"
 	}
 
+	// An empty namespace means the root namespace: no namespace header is sent.
 	vaultConfig.Namespace = os.Getenv("VAULT_NAMESPACE")
-	if vaultConfig.Namespace == "" {
-		vaultConfig.Namespace = "default"
-	}
 
 	vaultConfig.SkipVerify, _ = strconv.ParseBool(os.Getenv("VAULT_SKIP_VERIFY"))
 
@@ -88,7 +86,7 @@ func getVaultConfigFromEnv() *VaultConfig {
 
 func (c *Controller) initVaultClient() error {
 	if c.vaultClient != nil {
-		_, err := c.vaultClient.Sys().Health()
+		err := checkVaultHealth(c.vaultClient)
 		if err == nil {
 			// Client is valid, no need to init
 			return nil
@@ -149,7 +147,7 @@ func (c *Controller) initVaultClient() error {
 	}
 	//
 	// Check connection to Vault
-	_, err = vaultClient.RawClient().Sys().Health()
+	err = checkVaultHealth(vaultClient.RawClient())
 	if err != nil {
 		c.logger.Error("testing connection to Vault failed")
 		return err
@@ -158,6 +156,20 @@ func (c *Controller) initVaultClient() error {
 	c.vaultClient = vaultClient.RawClient()
 	c.logger.Info("Vault client initialized")
 	return nil
+}
+
+// checkVaultHealth calls sys/health without a namespace header. OpenBao serves
+// sys/health only in the root namespace and rejects the request with "operation
+// unavailable in namespaces" when any namespace header is set, including "root".
+func checkVaultHealth(client *vaultapi.Client) error {
+	healthClient, err := client.CloneWithHeaders()
+	if err != nil {
+		return err
+	}
+	healthClient.SetToken(client.Token())
+	healthClient.ClearNamespace()
+	_, err = healthClient.Sys().Health()
+	return err
 }
 
 type ErrSecretNotFound struct {
