@@ -44,15 +44,21 @@ func retryPollingController(t *testing.T, failRead *bool) (*Controller, *fake.Cl
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/v1/sys/health" {
-			fmt.Fprint(w, `{"initialized":true,"sealed":false,"standby":false}`)
+			if _, err := fmt.Fprint(w, `{"initialized":true,"sealed":false,"standby":false}`); err != nil {
+				t.Errorf("write Vault test response: %v", err)
+			}
 			return
 		}
 		if *failRead {
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, `{"errors":["synthetic read error"]}`)
+			if _, err := fmt.Fprint(w, `{"errors":["synthetic read error"]}`); err != nil {
+				t.Errorf("write Vault test response: %v", err)
+			}
 			return
 		}
-		fmt.Fprint(w, `{"data":{"data":{"password":"synthetic"},"metadata":{"version":2}}}`)
+		if _, err := fmt.Fprint(w, `{"data":{"data":{"password":"synthetic"},"metadata":{"version":2}}}`); err != nil {
+			t.Errorf("write Vault test response: %v", err)
+		}
 	}))
 	t.Cleanup(server.Close)
 	config := vaultapi.DefaultConfig()
