@@ -53,7 +53,7 @@ func readPollingController(t *testing.T, failRead *bool) (*Controller, *fake.Cli
 			}
 			return
 		}
-		if _, err := fmt.Fprint(w, `{"data":{"data":{"password":"synthetic"},"metadata":{"version":2}}}`); err != nil {
+		if _, err := fmt.Fprint(w, `{"data":{"current_version":2}}`); err != nil {
 			t.Errorf("write Vault test response: %v", err)
 		}
 	}))
