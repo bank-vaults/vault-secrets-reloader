@@ -138,7 +138,7 @@ func TestGetSecretVersionFromVault(t *testing.T) {
 			err: ErrSecretNotFound{},
 		}
 
-		_, err := getSecretVersionFromVault(vaultClient, "test")
+		_, err := getSecretVersionFromVault(vaultClient, "test/data/secret")
 		assert.Equal(t, ErrSecretNotFound{}, err)
 	})
 
@@ -147,22 +147,28 @@ func TestGetSecretVersionFromVault(t *testing.T) {
 			err: assert.AnError,
 		}
 
-		_, err := getSecretVersionFromVault(vaultClient, "test")
+		_, err := getSecretVersionFromVault(vaultClient, "test/data/secret")
 		assert.Equal(t, assert.AnError, err)
+	})
+
+	t.Run("secret invalid", func(t *testing.T) {
+		vaultClient := &vaultClientMock{}
+		path := "test/dat/secret"
+
+		_, err := getSecretVersionFromVault(vaultClient, path)
+		assert.Equal(t, ErrSecretInvalid{secretPath: path}, err)
 	})
 
 	t.Run("success", func(t *testing.T) {
 		vaultClient := &vaultClientMock{
 			vaultSecret: &vaultapi.Secret{
 				Data: map[string]interface{}{
-					"metadata": map[string]interface{}{
-						"version": json.Number("3"),
-					},
+					"current_version": json.Number("3"),
 				},
 			},
 		}
 
-		version, err := getSecretVersionFromVault(vaultClient, "test")
+		version, err := getSecretVersionFromVault(vaultClient, "test/data/secret")
 		assert.NoError(t, err)
 		assert.Equal(t, 3, version)
 	})

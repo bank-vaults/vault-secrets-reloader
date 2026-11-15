@@ -107,8 +107,8 @@ spec:
           }
       # define a new policy for the Reloader
       - name: read_secrets
-        rules: path "secret/*" {
-          capabilities = ["read", "list"]
+        rules: path "secret/metadata/*" {
+          capabilities = ["read"]
           }
 
     groups:
