@@ -16,37 +16,60 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ template "vault-secrets-reloader.fullname" . }}
+  name: {{ include "vault-secrets-reloader.discoveryRole" . }}
 rules:
-  - apiGroups:
-      - "apps"
-    resources:
-      - deployments
-      - statefulsets
-      - daemonsets
-    verbs:
-      - "get"
-      - "list"
-      - "update"
-      - "watch"
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - "get"
-
+  - apiGroups: ["secrets-reloader.security.bank-vaults.io"]
+    resources: ["vaultreloaders"]
+    verbs: ["list", "watch"]
 ---
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ template "vault-secrets-reloader.fullname" . }}
+  name: {{ include "vault-secrets-reloader.discoveryRole" . }}
 roleRef:
-  kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
-  name: {{ template "vault-secrets-reloader.fullname" . }}
+  kind: ClusterRole
+  name: {{ include "vault-secrets-reloader.discoveryRole" . }}
 subjects:
-- kind: ServiceAccount
-  namespace: {{ .Release.Namespace }}
-  name: {{ template "vault-secrets-reloader.serviceAccountName" . }}
+  - kind: ServiceAccount
+    name: {{ include "vault-secrets-reloader.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "vault-secrets-reloader.namespaceRole" . }}
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch", "patch"]
+  - apiGroups: ["secrets-reloader.security.bank-vaults.io"]
+    resources: ["vaultreloaders"]
+    verbs: ["get"]
+  - apiGroups: ["secrets-reloader.security.bank-vaults.io"]
+    resources: ["vaultreloaders/status"]
+    verbs: ["patch"]
+{{- if .Values.namespaced.leaderElection }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "vault-secrets-reloader.fullname" . }}-leader
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "create", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "vault-secrets-reloader.fullname" . }}-leader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "vault-secrets-reloader.fullname" . }}-leader
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "vault-secrets-reloader.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

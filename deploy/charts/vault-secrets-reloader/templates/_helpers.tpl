@@ -60,3 +60,10 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{- define "vault-secrets-reloader.discoveryRole" -}}
+{{- printf "%s-discovery" (include "vault-secrets-reloader.fullname" . | trunc 53 | trimSuffix "-") -}}
+{{- end -}}
+{{- define "vault-secrets-reloader.namespaceRole" -}}
+{{- "vault-secrets-reloader-operator" -}}
+{{- end -}}

@@ -19,21 +19,21 @@ package e2e
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
 	vaultV1alpha1 "github.com/bank-vaults/vault-operator/pkg/apis/vault/v1alpha1"
 	vaultClientV1alpha1 "github.com/bank-vaults/vault-operator/pkg/client/clientset/versioned/typed/vault/v1alpha1"
-	"github.com/bank-vaults/vault-secrets-reloader/pkg/reloader"
+	"github.com/bank-vaults/vault-secrets-reloader/pkg/operator"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	utilwait "k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/e2e-framework/klient/decoder"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -73,7 +73,7 @@ func TestWorkloadReload(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-daemonset", Namespace: cfg.Namespace()},
 			}
 			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(daemonSet, func(obj k8s.Object) bool {
-				return obj.(*appsv1.DaemonSet).Spec.Template.Annotations[reloader.ReloadCountAnnotationName] == "1"
+				return obj.(*appsv1.DaemonSet).Spec.Template.Annotations[operator.RevisionAnnotation] != ""
 			}), wait.WithTimeout(3*time.Minute))
 			require.NoError(t, err)
 
@@ -84,7 +84,7 @@ func TestWorkloadReload(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-statefulset", Namespace: cfg.Namespace()},
 			}
 			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(statefulSet, func(obj k8s.Object) bool {
-				return obj.(*appsv1.StatefulSet).Spec.Template.Annotations[reloader.ReloadCountAnnotationName] == "1"
+				return obj.(*appsv1.StatefulSet).Spec.Template.Annotations[operator.RevisionAnnotation] != ""
 			}), wait.WithTimeout(3*time.Minute))
 			require.NoError(t, err)
 
@@ -95,7 +95,7 @@ func TestWorkloadReload(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-deployment-to-be-reloaded", Namespace: cfg.Namespace()},
 			}
 			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(deployment, func(obj k8s.Object) bool {
-				return obj.(*appsv1.Deployment).Spec.Template.Annotations[reloader.ReloadCountAnnotationName] == "1"
+				return obj.(*appsv1.Deployment).Spec.Template.Annotations[operator.RevisionAnnotation] != ""
 			}), wait.WithTimeout(3*time.Minute))
 			require.NoError(t, err)
 
@@ -106,7 +106,7 @@ func TestWorkloadReload(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-deployment-no-reload", Namespace: cfg.Namespace()},
 			}
 			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(deployment, func(obj k8s.Object) bool {
-				return obj.(*appsv1.Deployment).Spec.Template.Annotations[reloader.ReloadCountAnnotationName] == ""
+				return obj.(*appsv1.Deployment).Spec.Template.Annotations[operator.RevisionAnnotation] == ""
 			}), wait.WithTimeout(3*time.Minute))
 			require.NoError(t, err)
 
@@ -117,7 +117,7 @@ func TestWorkloadReload(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-deployment-fixed-versions-no-reload", Namespace: cfg.Namespace()},
 			}
 			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(deployment, func(obj k8s.Object) bool {
-				return obj.(*appsv1.Deployment).Spec.Template.Annotations[reloader.ReloadCountAnnotationName] == ""
+				return obj.(*appsv1.Deployment).Spec.Template.Annotations[operator.RevisionAnnotation] == ""
 			}), wait.WithTimeout(3*time.Minute))
 			require.NoError(t, err)
 
@@ -128,7 +128,7 @@ func TestWorkloadReload(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-deployment-annotated-reload", Namespace: cfg.Namespace()},
 			}
 			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(deployment, func(obj k8s.Object) bool {
-				return obj.(*appsv1.Deployment).Spec.Template.Annotations[reloader.ReloadCountAnnotationName] == "1"
+				return obj.(*appsv1.Deployment).Spec.Template.Annotations[operator.RevisionAnnotation] != ""
 			}), wait.WithTimeout(3*time.Minute))
 			require.NoError(t, err)
 
@@ -139,7 +139,7 @@ func TestWorkloadReload(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-deployment-annotated-no-reload", Namespace: cfg.Namespace()},
 			}
 			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(deployment, func(obj k8s.Object) bool {
-				return obj.(*appsv1.Deployment).Spec.Template.Annotations[reloader.ReloadCountAnnotationName] == ""
+				return obj.(*appsv1.Deployment).Spec.Template.Annotations[operator.RevisionAnnotation] == ""
 			}), wait.WithTimeout(3*time.Minute))
 			require.NoError(t, err)
 
@@ -170,75 +170,36 @@ func applyWorkloads() *features.FeatureBuilder {
 			)
 			require.NoError(t, err)
 
-			// workloadsAvailable fails on Github Runners, so waiting a little for the workloads to come up is fine for now
-			// err = workloadsAvailable(cfg)
-			// require.NoError(t, err)
-			time.Sleep(2 * time.Minute)
+			// Wait for successful initial metadata observations before rotating secrets.
+			client, err := dynamic.NewForConfig(cfg.Client().RESTConfig())
+			require.NoError(t, err)
+			err = utilwait.PollUntilContextTimeout(ctx, 2*time.Second, 3*time.Minute, true, func(ctx context.Context) (bool, error) {
+				cr, err := client.Resource(vaultReloaderResource).Namespace(cfg.Namespace()).Get(ctx, "default", metav1.GetOptions{})
+				if err != nil {
+					return false, err
+				}
+				targets, _, err := unstructured.NestedSlice(cr.Object, "status", "targets")
+				if err != nil {
+					return false, err
+				}
+				ready := map[string]bool{}
+				for _, item := range targets {
+					target, ok := item.(map[string]interface{})
+					if !ok {
+						continue
+					}
+					name, _, _ := unstructured.NestedString(target, "name")
+					_, observed, _ := unstructured.NestedString(target, "lastSuccessfulPoll")
+					if observed {
+						ready[name] = true
+					}
+				}
+				return ready["reloader-test-daemonset"] && ready["reloader-test-statefulset"] && ready["reloader-test-deployment-to-be-reloaded"] && ready["reloader-test-deployment-annotated-reload"], nil
+			})
+			require.NoError(t, err, "operator did not establish metadata baselines")
 
 			return ctx
 		})
-}
-
-func workloadsAvailable(cfg *envconf.Config) error {
-	var errors []error
-
-	// wait for the daemonset to become available
-	daemonSet := &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-daemonset", Namespace: cfg.Namespace()},
-	}
-	err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(daemonSet, func(obj k8s.Object) bool {
-		return obj.(*appsv1.DaemonSet).Status.NumberReady == obj.(*appsv1.DaemonSet).Status.DesiredNumberScheduled
-	}), wait.WithTimeout(10*time.Minute))
-	if err != nil {
-		errors = append(errors, fmt.Errorf("reloader-test-daemonset: %w", err))
-	}
-
-	// wait for the statefulset to become available
-	statefulSet := &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-statefulset", Namespace: cfg.Namespace()},
-	}
-	err = wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(statefulSet, func(obj k8s.Object) bool {
-		return obj.(*appsv1.StatefulSet).Status.ReadyReplicas == *obj.(*appsv1.StatefulSet).Spec.Replicas
-	}), wait.WithTimeout(10*time.Minute))
-	if err != nil {
-		errors = append(errors, fmt.Errorf("reloader-test-statefulset: %w", err))
-	}
-
-	// wait for the deployments to become available
-	deploymentToBeReloaded := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-deployment-to-be-reloaded", Namespace: cfg.Namespace()},
-	}
-	err = wait.For(conditions.New(cfg.Client().Resources()).DeploymentConditionMatch(deploymentToBeReloaded, appsv1.DeploymentAvailable, v1.ConditionTrue), wait.WithTimeout(10*time.Minute))
-	if err != nil {
-		errors = append(errors, fmt.Errorf("reloader-test-deployment-to-be-reloaded: %w", err))
-	}
-
-	deploymentNoReload := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-deployment-no-reload", Namespace: cfg.Namespace()},
-	}
-	err = wait.For(conditions.New(cfg.Client().Resources()).DeploymentConditionMatch(deploymentNoReload, appsv1.DeploymentAvailable, v1.ConditionTrue), wait.WithTimeout(10*time.Minute))
-	if err != nil {
-		errors = append(errors, fmt.Errorf("reloader-test-deployment-no-reload: %w", err))
-	}
-
-	deploymentFixedVersionsNoReload := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{Name: "reloader-test-deployment-fixed-versions-no-reload", Namespace: cfg.Namespace()},
-	}
-	err = wait.For(conditions.New(cfg.Client().Resources()).DeploymentConditionMatch(deploymentFixedVersionsNoReload, appsv1.DeploymentAvailable, v1.ConditionTrue), wait.WithTimeout(10*time.Minute))
-	if err != nil {
-		errors = append(errors, fmt.Errorf("reloader-test-deployment-fixed-versions-no-reload: %w", err))
-	}
-
-	if len(errors) == 0 {
-		return nil
-	}
-
-	var errorStrings []string
-	for _, err := range errors {
-		errorStrings = append(errorStrings, err.Error())
-	}
-
-	return fmt.Errorf("%s", strings.Join(errorStrings, ", "))
 }
 
 func getVaultPatch() string {

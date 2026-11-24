@@ -136,6 +136,7 @@ spec:
           - name: reloader
             bound_service_account_names: ["vault-secrets-reloader"]
             bound_service_account_namespaces: ["bank-vaults-infra"]
+            audience: "vault"
             policies: ["read_secrets"]  # use the read_secrets policy in the reloader role
             ttl: 1h
 

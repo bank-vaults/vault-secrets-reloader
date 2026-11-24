@@ -13,8 +13,10 @@ spec:
         app.kubernetes.io/name: reloader-test-deployment-to-be-reloaded
       annotations:
         secrets-webhook.security.bank-vaults.io/provider: "vault"
-        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
+        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault.default.svc:8200"
         secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
+        secrets-reloader.security.bank-vaults.io/vault-role: "reloader"
+        secrets-webhook.security.bank-vaults.io/vault-skip-verify: "true"
         secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"
     spec:
       initContainers:
@@ -64,7 +66,7 @@ spec:
         app.kubernetes.io/name: reloader-test-deployment-no-reload
       annotations:
         secrets-webhook.security.bank-vaults.io/provider: "vault"
-        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
+        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault.default.svc:8200"
         secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
     spec:
       containers:
@@ -101,8 +103,10 @@ spec:
         app.kubernetes.io/name: reloader-test-deployment-fixed-versions-no-reload
       annotations:
         secrets-webhook.security.bank-vaults.io/provider: "vault"
-        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
+        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault.default.svc:8200"
         secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
+        secrets-reloader.security.bank-vaults.io/vault-role: "reloader"
+        secrets-webhook.security.bank-vaults.io/vault-skip-verify: "true"
         secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"
     spec:
       containers:
@@ -139,9 +143,11 @@ spec:
         app.kubernetes.io/name: reloader-test-deployment-annotated-reload
       annotations:
         secrets-webhook.security.bank-vaults.io/provider: "vault"
-        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
+        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault.default.svc:8200"
         secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
         secrets-webhook.security.bank-vaults.io/vault-from-path: "secret/data/accounts/aws"
+        secrets-reloader.security.bank-vaults.io/vault-role: "reloader"
+        secrets-webhook.security.bank-vaults.io/vault-skip-verify: "true"
         secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"
     spec:
       containers:
@@ -178,9 +184,11 @@ spec:
         app.kubernetes.io/name: reloader-test-deployment-annotated-no-reload
       annotations:
         secrets-webhook.security.bank-vaults.io/provider: "vault"
-        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault:8200"
+        secrets-webhook.security.bank-vaults.io/vault-addr: "https://vault.default.svc:8200"
         secrets-webhook.security.bank-vaults.io/vault-tls-secret: vault-tls
         secrets-webhook.security.bank-vaults.io/vault-from-path: "secret/data/dockerrepo#1"
+        secrets-reloader.security.bank-vaults.io/vault-role: "reloader"
+        secrets-webhook.security.bank-vaults.io/vault-skip-verify: "true"
         secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"
     spec:
       containers:

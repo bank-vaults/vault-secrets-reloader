@@ -18,32 +18,49 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/bank-vaults/vault-secrets-reloader/pkg/operator"
+	"k8s.io/client-go/dynamic"
 	"log/slog"
 	"net/http"
 	"os"
 	"slices"
-	"time"
+	"strings"
+	"sync/atomic"
 
 	slogmulti "github.com/samber/slog-multi"
-	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-
-	"github.com/bank-vaults/vault-secrets-reloader/pkg/reloader"
-)
-
-const (
-	defaultSyncPeriod        = 30 * time.Second
-	defaultReloaderRunPeriod = 60 * time.Second
 )
 
 func main() {
 	// Register CLI flags
-	collectorSyncPeriod := flag.Duration("collector-sync-period", defaultSyncPeriod,
-		"Determines the minimum frequency at which watched resources are reconciled")
-	reloaderRunPeriod := flag.Duration("reloader-run-period", defaultReloaderRunPeriod,
-		"Determines the minimum frequency at which watched resources are reloaded")
+	options := operator.DefaultOptions()
+	allowedVaults := flag.String("vault-address-allowlist", "", "Comma-separated exact Vault origins (namespaced mode)")
+	allowedCAs := flag.String("vault-ca-secret-allowlist", "", "Approved namespace/name pairs for CA Secret reads")
+	flag.DurationVar(&options.PollInterval, "vault-poll-interval", options.PollInterval, "Metadata polling interval")
+	flag.DurationVar(&options.ReconcileInterval, "namespace-reconcile-interval", options.ReconcileInterval, "Periodic namespace reconciliation interval")
+	flag.DurationVar(&options.AccessInterval, "access-check-interval", options.AccessInterval, "Namespace access check interval")
+	flag.DurationVar(&options.RequestTimeout, "request-timeout", options.RequestTimeout, "API/Vault request timeout")
+	flag.DurationVar(&options.SyncTimeout, "cache-sync-timeout", options.SyncTimeout, "Namespace cache synchronization timeout")
+	flag.DurationVar(&options.RolloutTimeout, "rollout-timeout", options.RolloutTimeout, "Time before reporting a stalled rollout")
+	flag.IntVar(&options.MaxNamespaces, "max-namespaces", options.MaxNamespaces, "Maximum active namespace runtimes")
+	flag.IntVar(&options.MaxTargets, "max-targets", options.MaxTargets, "Maximum targets per namespace")
+	flag.IntVar(&options.MaxPaths, "max-paths", options.MaxPaths, "Maximum paths per workload")
+	flag.IntVar(&options.MaxEntries, "max-cache-entries", options.MaxEntries, "Maximum shared metadata cache entries")
+	flag.IntVar(&options.MaxStateBytes, "max-state-bytes", options.MaxStateBytes, "Maximum serialized status patch size")
+	flag.IntVar(&options.Workers, "poll-workers", options.Workers, "Global metadata worker limit")
+	flag.IntVar(&options.PerVaultWorkers, "poll-workers-per-vault", options.PerVaultWorkers, "Per-Vault worker limit")
+	flag.IntVar(&options.PerTenantWorkers, "poll-workers-per-namespace", options.PerTenantWorkers, "Per-namespace worker limit")
+	flag.Float64Var(&options.VaultQPS, "vault-qps", options.VaultQPS, "Request starts per second per Vault origin")
+	flag.StringVar(&options.JWTFile, "vault-jwt-file", options.JWTFile, "Projected controller JWT file for Vault login")
+	flag.StringVar(&options.CAFile, "vault-ca-file", os.Getenv("VAULT_CACERT"), "Platform-provided Vault CA bundle file")
+	flag.BoolVar(&options.AllowCASecrets, "allow-ca-secret-reads", false, "Explicitly enable approved local CA Secret reads")
+	flag.BoolVar(&options.AllowHTTP, "allow-http-vault", false, "Platform opt-in for HTTP Vault origins (development only)")
+	flag.BoolVar(&options.LeaderElection, "leader-elect", options.LeaderElection, "Enable namespaced-mode leader election")
+	flag.StringVar(&options.LeaderNamespace, "leader-election-namespace", os.Getenv("POD_NAMESPACE"), "Namespace of the leader-election Lease")
+	flag.StringVar(&options.LeaderName, "leader-election-name", options.LeaderName, "Leader-election Lease name")
+	flag.StringVar(&options.Identity, "leader-election-identity", os.Getenv("POD_NAME"), "Unique identity for this process/pod")
 	logLevel := flag.String("log-level", "info", "Log level (debug, info, warn, error).")
 	enableJSONLog := flag.Bool("enable-json-log", false, "Enable JSON logging")
 	flag.Parse()
@@ -102,6 +119,7 @@ func main() {
 		slog.SetDefault(logger)
 	}
 
+	var namespaced atomic.Pointer[operator.Controller]
 	// Handler for health checks
 	port := os.Getenv("LISTEN_ADDRESS")
 	if port == "" {
@@ -110,7 +128,20 @@ func main() {
 
 	go func() {
 		_ = http.ListenAndServe(port, http.HandlerFunc(
-			func(w http.ResponseWriter, _ *http.Request) {
+			func(w http.ResponseWriter, request *http.Request) {
+				current := namespaced.Load()
+				if request.URL.Path == "/metrics" && current != nil {
+					current.ServeMetrics(w)
+					return
+				}
+				isReady := false
+				if current != nil {
+					isReady = current.Ready()
+				}
+				if request.URL.Path == "/readyz" && !isReady {
+					w.WriteHeader(http.StatusServiceUnavailable)
+					return
+				}
 				_, _ = w.Write([]byte("ok"))
 			},
 		))
@@ -129,20 +160,45 @@ func main() {
 		os.Exit(1)
 	}
 
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, *collectorSyncPeriod)
-
-	controller := reloader.NewController(
-		logger,
-		kubeClient,
-		kubeInformerFactory.Apps().V1().Deployments(),
-		kubeInformerFactory.Apps().V1().DaemonSets(),
-		kubeInformerFactory.Apps().V1().StatefulSets(),
-	)
-
-	kubeInformerFactory.Start(ctx.Done())
-
-	if err = controller.Run(ctx, *reloaderRunPeriod); err != nil {
-		logger.Error(fmt.Errorf("error running controller: %s", err).Error())
-		os.Exit(1)
+	{
+		options.Logger = logger
+		options.AllowedAddresses = splitCSV(*allowedVaults)
+		options.AllowedCASecrets = splitCSV(*allowedCAs)
+		if v := os.Getenv("VAULT_ADDR"); v != "" {
+			options.DefaultAddress = v
+		}
+		options.DefaultNamespace = os.Getenv("VAULT_NAMESPACE")
+		if v := os.Getenv("VAULT_PATH"); v != "" {
+			options.DefaultAuthMount = v
+		}
+		if v := os.Getenv("VAULT_AUTH_METHOD"); v != "" {
+			options.DefaultAuthMethod = v
+		}
+		dyn, e := dynamic.NewForConfig(kubeConfig)
+		if e != nil {
+			logger.Error("cannot create custom-resource client")
+			os.Exit(1)
+		}
+		controller, e := operator.NewController(options, kubeClient, dyn, nil)
+		if e != nil {
+			logger.Error(e.Error())
+			os.Exit(1)
+		}
+		namespaced.Store(controller)
+		if e = controller.Run(ctx); e != nil && ctx.Err() == nil {
+			logger.Error("namespaced controller stopped", "error", e.Error())
+			os.Exit(1)
+		}
+		return
 	}
+}
+
+func splitCSV(value string) []string {
+	var result []string
+	for _, item := range strings.Split(value, ",") {
+		if item = strings.TrimSpace(item); item != "" {
+			result = append(result, item)
+		}
+	}
+	return result
 }

@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": [
+        "namespaced"
+      ]
+    },
+    "namespaced": {
+      "type": "object",
+      "properties": {
+        "reconcileInterval": {
+          "type": "string",
+          "minLength": 1
+        },
+        "vaultAddressAllowlist": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "pollWorkers": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "pollWorkersPerVault": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "pollWorkersPerNamespace": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "vaultQPS": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maxNamespaces": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxTargets": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "maxPaths": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "maxStateBytes": {
+          "type": "integer",
+          "minimum": 1024
+        },
+        "maxCacheEntries": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "namespaced"
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "namespaced": {
+            "properties": {
+              "vaultAddressAllowlist": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

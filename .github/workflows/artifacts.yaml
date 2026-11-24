@@ -233,7 +233,7 @@ jobs:
         run: echo "value=${{ steps.oci-registry-name.outputs.value }}/${{ steps.chart-name.outputs.value }}" >> "$GITHUB_OUTPUT"
 
       - name: Helm lint
-        run: helm lint deploy/charts/${{ steps.chart-name.outputs.value }}
+        run: helm lint deploy/charts/${{ steps.chart-name.outputs.value }} -f tests/helm-values.yaml
 
       - name: Determine raw version
         uses: haya14busa/action-cond@94f77f7a80cd666cb3155084e428254fea4281fd # v1.2.1

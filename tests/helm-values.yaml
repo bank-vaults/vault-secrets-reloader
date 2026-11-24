@@ -1,0 +1,4 @@
+# Example origin used only for chart validation.
+namespaced:
+  vaultAddressAllowlist:
+    - https://vault.example.test:8200

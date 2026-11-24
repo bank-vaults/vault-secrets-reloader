@@ -1,0 +1,9 @@
+{{- if eq .Values.mode "namespaced" }}
+Experimental namespaced operator. Install the VaultReloader CRD before starting the operator.
+Each team creates VaultReloader/default plus a RoleBinding in its own namespace:
+  roleRef.kind: ClusterRole
+  roleRef.name: {{ include "vault-secrets-reloader.namespaceRole" . }}
+  subjects[0].name: {{ include "vault-secrets-reloader.serviceAccountName" . }}
+  subjects[0].namespace: {{ .Release.Namespace }}
+No workload ClusterRoleBinding is installed. Configure Vault metadata ACLs and the operator address allowlist.
+{{- end }}

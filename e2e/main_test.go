@@ -27,7 +27,12 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	klog "k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/e2e-framework/klient/conf"
@@ -54,7 +59,10 @@ func TestMain(m *testing.M) {
 	if os.Getenv("LOG_VERBOSE") == "true" {
 		flags := flag.NewFlagSet("", flag.ContinueOnError)
 		klog.InitFlags(flags)
-		flags.Parse([]string{"-v", "4"})
+		if err := flags.Parse([]string{"-v", "4"}); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	}
 	log.SetLogger(klog.NewKlogr())
 
@@ -104,8 +112,8 @@ func TestMain(m *testing.M) {
 		testenv.Finish(uninstallSecretsWebhook, envfuncs.DeleteNamespace("bank-vaults-infra"))
 
 		// Install reloader
-		testenv.Setup(installVaultSecretsReloader)
-		testenv.Finish(uninstallVaultSecretsReloader)
+		testenv.Setup(installVaultSecretsReloader, optInNamespace)
+		testenv.Finish(uninstallVaultSecretsReloader, removeNamespaceOptIn)
 
 		// Unsealing and Vault access only works in the default namespace at the moment
 		testenv.Setup(useNamespace("default"))
@@ -215,7 +223,7 @@ func installVaultSecretsReloader(ctx context.Context, cfg *envconf.Config) (cont
 		helm.WithName("vault-secrets-reloader"),
 		helm.WithChart(chart),
 		helm.WithNamespace("bank-vaults-infra"),
-		helm.WithArgs("--set", "image.tag="+version, "--set", "logLevel=debug", "--set", "collectorSyncPeriod=15s", "--set", "reloaderRunPeriod=15s", "--set", "env.VAULT_ROLE=reloader", "--set", "env.VAULT_ADDR=https://vault.default.svc.cluster.local:8200", "--set", "env.VAULT_TLS_SECRET=vault-tls", "--set", "env.VAULT_TLS_SECRET_NS=bank-vaults-infra"),
+		helm.WithArgs("--set", "image.tag="+version, "--set", "logLevel=debug", "--set", "namespaced.installCRD=true", "--set", "namespaced.vaultAddressAllowlist[0]=https://vault.default.svc:8200", "--set", "namespaced.pollInterval=5s", "--set", "namespaced.reconcileInterval=5s", "--set", "namespaced.accessCheckInterval=5s"),
 		helm.WithWait(),
 		helm.WithTimeout(defaultTimeout.String()),
 	)
@@ -224,6 +232,50 @@ func installVaultSecretsReloader(ctx context.Context, cfg *envconf.Config) (cont
 	}
 
 	return ctx, nil
+}
+
+var vaultReloaderResource = schema.GroupVersionResource{Group: "secrets-reloader.security.bank-vaults.io", Version: "v1alpha1", Resource: "vaultreloaders"}
+
+func optInNamespace(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+	kube, err := kubernetes.NewForConfig(cfg.Client().RESTConfig())
+	if err != nil {
+		return ctx, err
+	}
+	_, err = kube.RbacV1().RoleBindings("default").Create(ctx, &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{Name: "vault-secrets-reloader"},
+		RoleRef:    rbacv1.RoleRef{APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole", Name: "vault-secrets-reloader-operator"},
+		Subjects:   []rbacv1.Subject{{Kind: "ServiceAccount", Name: "vault-secrets-reloader", Namespace: "bank-vaults-infra"}},
+	}, metav1.CreateOptions{})
+	if err != nil {
+		return ctx, fmt.Errorf("creating namespace role binding: %w", err)
+	}
+	client, err := dynamic.NewForConfig(cfg.Client().RESTConfig())
+	if err != nil {
+		return ctx, err
+	}
+	_, err = client.Resource(vaultReloaderResource).Namespace("default").Create(ctx, &unstructured.Unstructured{Object: map[string]interface{}{
+		"apiVersion": "secrets-reloader.security.bank-vaults.io/v1alpha1", "kind": "VaultReloader",
+		"metadata": map[string]interface{}{"name": "default", "namespace": "default"}, "spec": map[string]interface{}{},
+	}}, metav1.CreateOptions{})
+	if err != nil {
+		return ctx, fmt.Errorf("creating VaultReloader: %w", err)
+	}
+	return ctx, nil
+}
+
+func removeNamespaceOptIn(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+	client, err := dynamic.NewForConfig(cfg.Client().RESTConfig())
+	if err != nil {
+		return ctx, err
+	}
+	if err = client.Resource(vaultReloaderResource).Namespace("default").Delete(ctx, "default", metav1.DeleteOptions{}); err != nil {
+		return ctx, err
+	}
+	kube, err := kubernetes.NewForConfig(cfg.Client().RESTConfig())
+	if err != nil {
+		return ctx, err
+	}
+	return ctx, kube.RbacV1().RoleBindings("default").Delete(ctx, "vault-secrets-reloader", metav1.DeleteOptions{})
 }
 
 func uninstallVaultSecretsReloader(ctx context.Context, cfg *envconf.Config) (context.Context, error) {

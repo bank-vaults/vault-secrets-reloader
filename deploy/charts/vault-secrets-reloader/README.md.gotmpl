@@ -1,58 +1,15 @@
 {{ template "chart.header" . }}
 
-This chart will install Vault Secrets Reloader Controller, that reloads workloads on a referenced secret change in HashiCorp Vault.
+This chart installs the namespace-scoped Vault Secrets Reloader. It authenticates to Vault using the operator ServiceAccount projected JWT (audience `vault`) and reads KV v2 metadata; Vault Secrets Webhook remains responsible for injecting secret values.
 
-Reloader will collect (unversioned) secrets injected by the Webhook from watched workloads, periodically checks if their version has been updated in Vault and if so, "reloads" the workload with an annotation update, triggering a new rollout so the Webhook can inject the new version of the secret into the pod.
-
-## Before you start
-
-Reloader works in conjunction with the [Secrets Webhook](https://github.com/bank-vaults/secrets-webhook), therefore the prerequisites to start using it would be a Hashicorp Vault instance, and a working Webhook.
-
-You will need to add the following annotations to the pod template spec of the workloads (i.e. Deployments, DaemonSets and StatefulSets) that you wish to reload:
+Teams opt in their namespace and set the following Pod-template annotations on each workload:
 
 ```yaml
 secrets-reloader.security.bank-vaults.io/reload-on-secret-change: "true"
+secrets-reloader.security.bank-vaults.io/vault-role: "reloader-metadata-role"
 ```
 
-## Installing the Chart
-
-**Prepare Kubernetes namespace**
-
-You can prepare a separate namespace for Vault Secrets Reloader beforehand, create it automatically if not yet exist with appending `--create-namespace` to the installation Helm command, or just use the one already created for Secrets Webhook.
-
-**Install the chart**
-
-1. Save Reloader default chart values:
-
-```shell
-helm show values oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-reloader > values.yaml
-```
-
-2. Check the configuration in `values.yaml` and update the required values if needed. Configure the time for periodic runs of the `collector` and `reloader` workers with a value in Go Duration format:
-
-```yaml
-collectorSyncPeriod: 30m
-reloaderRunPeriod: 1h
-```
-
-Additionally, Reloader needs to be supplied with Vault credentials to be able to connect to Vault in order to get the secrets. You can check the list of environmental variables accepted for creating a Vault client [here](https://developer.hashicorp.com/vault/docs/commands#environment-variables). For example:
-
-```yaml
-env:
-  # define env vars for Vault used for authentication
-  VAULT_ROLE: "reloader"
-  VAULT_ADDR: "https://vault.default.svc.cluster.local:8200"
-  # optional: Vault Enterprise or OpenBao namespace; leave unset to use the root namespace
-  # VAULT_NAMESPACE: "my-namespace"
-  VAULT_TLS_SECRET: "vault-tls"
-  VAULT_TLS_SECRET_NS: "bank-vaults-infra"
-```
-
-3. Install the chart:
-
-```shell
-helm upgrade --install --values values.yaml vault-secrets-reloader oci://ghcr.io/bank-vaults/helm-charts/vault-secrets-reloader --namespace bank-vaults-infra --create-namespace
-```
+The named Vault role must permit the operator ServiceAccount and have metadata-only policies. Configure `namespaced.vaultAddressAllowlist` with the trusted Vault origins and install the CRD separately or set `namespaced.installCRD=true`. See `docs/namespaced-operator.md` in the source repository for setup and security details. Build and publish the corresponding operator image before installing this chart.
 
 {{ define "chart.valuesTableHtml" }}
 

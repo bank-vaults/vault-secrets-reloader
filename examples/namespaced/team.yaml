@@ -1,0 +1,22 @@
+# Replace names with those printed by `helm get notes <release> -n <infra namespace>`.
+apiVersion: secrets-reloader.security.bank-vaults.io/v1alpha1
+kind: VaultReloader
+metadata:
+  name: default
+  namespace: team-a
+spec:
+  suspend: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vault-secrets-reloader
+  namespace: team-a
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vault-secrets-reloader-operator
+subjects:
+  - kind: ServiceAccount
+    name: vault-secrets-reloader
+    namespace: vault-infra
