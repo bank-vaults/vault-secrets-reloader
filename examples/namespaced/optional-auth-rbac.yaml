@@ -1,0 +1,26 @@
+# Optional CA Secret reads. Not installed by the operator chart.
+# Grant only after configuring exact namespace/name allowlists in the operator.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: reloader-vault-auth
+  namespace: team-a
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["vault-ca"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: reloader-vault-auth
+  namespace: team-a
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: reloader-vault-auth
+subjects:
+  - kind: ServiceAccount
+    name: vault-secrets-reloader
+    namespace: vault-infra

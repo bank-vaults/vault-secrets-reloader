@@ -23,11 +23,6 @@ nameOverride: ""
 # -- Override app full name
 fullnameOverride: ""
 
-# -- Time interval for the collector worker to run in Go Duration format
-collectorSyncPeriod: 30m
-# -- Time interval for the reloader worker to run in Go Duration format
-reloaderRunPeriod: 1h
-
 serviceAccount:
   # -- Specifies whether a service account should be created
   create: true
@@ -35,7 +30,7 @@ serviceAccount:
   annotations: {}
   # -- The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: vault-secrets-reloader
 
 # -- Extra annotations to add to pod metadata
 podAnnotations: {}
@@ -139,3 +134,33 @@ tolerations: []
 # -- Node affinity settings for the pods.
 # Check: <https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/>
 affinity: {}
+
+# -- Namespace-scoped operator mode.
+mode: namespaced
+namespaced:
+  # -- Manage the experimental CRD as a Helm template (kept on uninstall). Alternatively install config/crd/bases separately.
+  installCRD: false
+  # -- Required exact Vault origins. Never derived from workload annotations.
+  vaultAddressAllowlist: []
+  allowHTTPVault: false
+  vaultJWTFile: /var/run/secrets/vault/token
+  vaultCAFile: ""
+  allowCASecretReads: false
+  caSecretAllowlist: []
+  leaderElection: true
+  pollInterval: 1m
+  # -- Periodic namespace reconciliation; workload events are processed independently.
+  reconcileInterval: 1m
+  accessCheckInterval: 1m
+  cacheSyncTimeout: 30s
+  requestTimeout: 10s
+  rolloutTimeout: 10m
+  maxNamespaces: 128
+  maxTargets: 200
+  maxPaths: 100
+  maxCacheEntries: 10000
+  maxStateBytes: 524288
+  pollWorkers: 8
+  pollWorkersPerVault: 4
+  pollWorkersPerNamespace: 2
+  vaultQPS: 10
