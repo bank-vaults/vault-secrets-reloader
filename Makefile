@@ -109,7 +109,7 @@ lint-go: # Run golang lint check
 
 .PHONY: lint-helm
 lint-helm: # Run helm lint check
-	$(HELM_BIN) lint deploy/charts/vault-secrets-reloader
+	$(HELM_BIN) lint deploy/charts/vault-secrets-reloader -f tests/helm-values.yaml
 
 .PHONY: lint-docker
 lint-docker: # Run Dockerfile lint check

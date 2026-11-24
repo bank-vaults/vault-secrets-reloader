@@ -24,7 +24,7 @@ ignored = [
 ]
 
 [header]
-authors = ["Cisco", "Bank-Vaults Maintainers"]
+authors = ["Cisco", "Bank-Vaults Maintainers", "Contributors"]
 ignorePaths = ["vendor"]
 ignoreFiles = ["zz_generated.*.go"]
 template = """// Copyright © :YEAR: :AUTHOR:
