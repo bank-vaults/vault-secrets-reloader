@@ -18,13 +18,14 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"k8s.io/apimachinery/pkg/runtime"
-	ktesting "k8s.io/client-go/testing"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"sync"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	ktesting "k8s.io/client-go/testing"
 
 	vaultapi "github.com/hashicorp/vault/api"
 	appsv1 "k8s.io/api/apps/v1"
@@ -56,7 +57,7 @@ func retryPollingController(t *testing.T, failRead *bool) (*Controller, *fake.Cl
 			}
 			return
 		}
-		if _, err := fmt.Fprint(w, `{"data":{"data":{"password":"synthetic"},"metadata":{"version":2}}}`); err != nil {
+		if _, err := fmt.Fprint(w, `{"data":{"current_version":2}}`); err != nil {
 			t.Errorf("write Vault test response: %v", err)
 		}
 	}))

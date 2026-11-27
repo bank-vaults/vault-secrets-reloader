@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bank-vaults/vault-sdk/vault"
@@ -180,17 +181,30 @@ func (e ErrSecretNotFound) Error() string {
 	return fmt.Sprintf("Vault secret path %s not found", e.secretPath)
 }
 
+type ErrSecretInvalid struct {
+	secretPath string
+}
+
+func (e ErrSecretInvalid) Error() string {
+	return fmt.Sprintf("Vault secret path %s couldn't be converted to metadata path", e.secretPath)
+}
+
 type vaultSecretReader interface {
 	Read(path string) (*vaultapi.Secret, error)
 }
 
 func getSecretVersionFromVault(vaultClient vaultSecretReader, secretPath string) (int, error) {
-	secret, err := vaultClient.Read(secretPath)
+	metadataPath := strings.Replace(secretPath, "/data/", "/metadata/", 1)
+	if metadataPath == secretPath {
+		return 0, ErrSecretInvalid{secretPath: secretPath}
+	}
+
+	secret, err := vaultClient.Read(metadataPath)
 	if err != nil {
 		return 0, err
 	}
 	if secret != nil {
-		secretVersion, err := secret.Data["metadata"].(map[string]interface{})["version"].(json.Number).Int64()
+		secretVersion, err := secret.Data["current_version"].(json.Number).Int64()
 		if err != nil {
 			return 0, err
 		}
